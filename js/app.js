@@ -22,11 +22,168 @@ function initializeApp() {
     if (checkAuthStatus()) {
         const userType = localStorage.getItem('userType');
         showDashboard(userType);
+        // Ensure forms on dashboards are bound as well (e.g., Add/Edit User)
+        initializeForms();
         
         // Load statistics if user is admin
         if (userType === 'admin') {
             loadStatistics();
         }
+
+// ---- Form Validation Helpers ----
+function setFieldError(input, message) {
+    if (!input) return;
+    input.classList.add('border-red-500');
+    input.classList.remove('border-green-500');
+    let error = input.parentNode.querySelector('.field-error');
+    if (!error) {
+        error = document.createElement('div');
+        error.className = 'field-error text-red-500 text-xs mt-1';
+        input.parentNode.appendChild(error);
+    }
+    error.textContent = message;
+}
+
+function clearFieldError(input) {
+    if (!input) return;
+    input.classList.remove('border-red-500');
+    let error = input.parentNode.querySelector('.field-error');
+    if (error) error.remove();
+}
+
+function validateAddUserForm(form, showErrors = false) {
+    let valid = true;
+    const role = form.querySelector('#userRole').value;
+
+    const requiredIds = ['firstName', 'lastName', 'email', 'username', 'password'];
+    requiredIds.forEach(id => {
+        const el = form.querySelector(`#${id}`);
+        if (el) {
+            const value = el.value.trim();
+            if (!value) {
+                valid = false;
+                if (showErrors) setFieldError(el, 'This field is required'); else clearFieldError(el);
+            } else {
+                clearFieldError(el);
+            }
+        }
+    });
+
+    // Password length
+    const passwordEl = form.querySelector('#password');
+    if (passwordEl && passwordEl.value.length > 0 && passwordEl.value.length < 6) {
+        valid = false;
+        if (showErrors) setFieldError(passwordEl, 'Password must be at least 6 characters'); else clearFieldError(passwordEl);
+    }
+
+    // Email format per role
+    const emailEl = form.querySelector('#email');
+    const email = emailEl.value.trim();
+    if (email && role) {
+        if (!validateEmailByRole(email, role)) {
+            valid = false;
+            if (showErrors) setFieldError(emailEl, getEmailValidationMessage(role)); else clearFieldError(emailEl);
+        } else {
+            clearFieldError(emailEl);
+        }
+    }
+
+    // Role-specific requireds
+    if (!role) valid = false;
+    if (role === 'student') {
+        const sid = form.querySelector('#studentId');
+        const course = form.querySelector('#course');
+        const sem = form.querySelector('#semester');
+        if (!sid || !sid.value.trim()) { valid = false; if (showErrors && sid) setFieldError(sid, 'Student ID is required'); else if (sid) clearFieldError(sid); }
+        if (!course || !course.value.trim()) { valid = false; if (showErrors && course) setFieldError(course, 'Course is required'); else if (course) clearFieldError(course); }
+        if (!sem || !sem.value) { valid = false; if (showErrors && sem) setFieldError(sem, 'Semester is required'); else if (sem) clearFieldError(sem); }
+        if (sem && sem.value && (Number(sem.value) < 1 || Number(sem.value) > 8)) { valid = false; if (showErrors) setFieldError(sem, 'Semester must be 1-8'); }
+    } else if (role === 'faculty') {
+        const emp = form.querySelector('#employeeId');
+        const dept = form.querySelector('#department');
+        const desig = form.querySelector('#designation');
+        if (!emp || !emp.value.trim()) { valid = false; if (showErrors && emp) setFieldError(emp, 'Employee ID is required'); else if (emp) clearFieldError(emp); }
+        if (!dept || !dept.value.trim()) { valid = false; if (showErrors && dept) setFieldError(dept, 'Department is required'); else if (dept) clearFieldError(dept); }
+        if (!desig || !desig.value.trim()) { valid = false; if (showErrors && desig) setFieldError(desig, 'Designation is required'); else if (desig) clearFieldError(desig); }
+    }
+
+    return valid;
+}
+
+function updateAddUserSubmitState(form) {
+    const btn = document.querySelector('button[form="addUserForm"]');
+    if (!btn) return;
+    const valid = validateAddUserForm(form, false);
+    btn.disabled = !valid;
+    if (btn.disabled) {
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+function validateEditUserForm(form, showErrors = false) {
+    let valid = true;
+    const role = form.querySelector('#editUserRole').value;
+    const requiredIds = ['editFirstName', 'editLastName', 'editEmail'];
+    requiredIds.forEach(id => {
+        const el = form.querySelector(`#${id}`);
+        if (el) {
+            const value = el.value.trim();
+            if (!value) {
+                valid = false;
+                if (showErrors) setFieldError(el, 'This field is required'); else clearFieldError(el);
+            } else {
+                clearFieldError(el);
+            }
+        }
+    });
+
+    // Email format per role
+    const emailEl = form.querySelector('#editEmail');
+    const email = emailEl.value.trim();
+    if (email && role) {
+        if (!validateEmailByRole(email, role)) {
+            valid = false;
+            if (showErrors) setFieldError(emailEl, getEmailValidationMessage(role)); else clearFieldError(emailEl);
+        } else {
+            clearFieldError(emailEl);
+        }
+    }
+
+    // Role specific
+    if (!role) valid = false;
+    if (role === 'student') {
+        const sid = form.querySelector('#editStudentId');
+        const course = form.querySelector('#editCourse');
+        const sem = form.querySelector('#editSemester');
+        if (!sid || !sid.value.trim()) { valid = false; if (showErrors && sid) setFieldError(sid, 'Student ID is required'); else if (sid) clearFieldError(sid); }
+        if (!course || !course.value.trim()) { valid = false; if (showErrors && course) setFieldError(course, 'Course is required'); else if (course) clearFieldError(course); }
+        if (!sem || !sem.value) { valid = false; if (showErrors && sem) setFieldError(sem, 'Semester is required'); else if (sem) clearFieldError(sem); }
+        if (sem && sem.value && (Number(sem.value) < 1 || Number(sem.value) > 8)) { valid = false; if (showErrors) setFieldError(sem, 'Semester must be 1-8'); }
+    } else if (role === 'faculty') {
+        const emp = form.querySelector('#editEmployeeId');
+        const dept = form.querySelector('#editDepartment');
+        const desig = form.querySelector('#editDesignation');
+        if (!emp || !emp.value.trim()) { valid = false; if (showErrors && emp) setFieldError(emp, 'Employee ID is required'); else if (emp) clearFieldError(emp); }
+        if (!dept || !dept.value.trim()) { valid = false; if (showErrors && dept) setFieldError(dept, 'Department is required'); else if (dept) clearFieldError(dept); }
+        if (!desig || !desig.value.trim()) { valid = false; if (showErrors && desig) setFieldError(desig, 'Designation is required'); else if (desig) clearFieldError(desig); }
+    }
+
+    return valid;
+}
+
+function updateEditUserSubmitState(form) {
+    const btn = document.querySelector('button[form="editUserForm"]');
+    if (!btn) return;
+    const valid = validateEditUserForm(form, false);
+    btn.disabled = !valid;
+    if (btn.disabled) {
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
     } else {
         // Initialize forms for login page
         initializeForms();
@@ -40,6 +197,252 @@ function cleanUrlParameters() {
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
     }
+}
+
+// Helper functions for forgot password
+function clearForgotPasswordErrors() {
+    const errorElements = ['forgot-email-error', 'forgot-password-error'];
+    errorElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.classList.add('hidden');
+        }
+    });
+    
+    // Clear success message
+    const successElement = document.getElementById('forgot-password-success');
+    if (successElement) {
+        successElement.classList.add('hidden');
+    }
+}
+
+function clearResetPasswordErrors() {
+    const errorElements = ['new-password-error', 'confirm-password-error', 'reset-password-error'];
+    errorElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.classList.add('hidden');
+        }
+    });
+    
+    // Clear success message
+    const successElement = document.getElementById('reset-password-success');
+    if (successElement) {
+        successElement.classList.add('hidden');
+    }
+}
+
+function showForgotPasswordError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.remove('hidden');
+    }
+}
+
+function showForgotPasswordSuccess(elementId, message) {
+    const successElement = document.getElementById(elementId);
+    if (successElement) {
+        successElement.textContent = message;
+        successElement.classList.remove('hidden');
+    }
+}
+
+function showResetPasswordError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.classList.remove('hidden');
+    }
+}
+
+function showResetPasswordSuccess(elementId, message) {
+    const successElement = document.getElementById(elementId);
+    if (successElement) {
+        successElement.textContent = message;
+        successElement.classList.remove('hidden');
+    }
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function isValidPassword(password) {
+    return password.length >= 8 &&
+           /[a-z]/.test(password) &&
+           /[A-Z]/.test(password) &&
+           /[0-9]/.test(password) &&
+           /[^A-Za-z0-9]/.test(password);
+}
+
+function showLoginPage() {
+    const loginPage = document.getElementById('login-page');
+    const forgotPasswordPage = document.getElementById('forgot-password-page');
+    const resetPasswordPage = document.getElementById('reset-password-page');
+    
+    forgotPasswordPage.classList.add('hidden');
+    resetPasswordPage.classList.add('hidden');
+    loginPage.classList.remove('hidden');
+    loginPage.classList.add('page-transition');
+}
+
+// Email validation functions
+function validateStudentEmail(email) {
+    const pattern = /^[0-9]{13}@silveroakuni\.ac\.in$/;
+    return pattern.test(email);
+}
+
+function validateFacultyEmail(email) {
+    const pattern = /^[0-9]{5,7}@silveroakuni\.ac\.in$/;
+    return pattern.test(email);
+}
+
+function validateAdminEmail(email) {
+    const pattern = /^admin[a-z]*@silveroakuni\.ac\.in$/;
+    return pattern.test(email);
+}
+
+function validateEmailByRole(email, role) {
+    switch (role) {
+        case 'student':
+            return validateStudentEmail(email);
+        case 'faculty':
+            return validateFacultyEmail(email);
+        case 'admin':
+            return validateAdminEmail(email);
+        default:
+            return false;
+    }
+}
+
+function getEmailValidationMessage(role) {
+    switch (role) {
+        case 'student':
+            return 'Must be a 13-digit number followed by @silveroakuni.ac.in (e.g., 1234567890123@silveroakuni.ac.in)';
+        case 'faculty':
+            return 'Must be a 5-7 digit number followed by @silveroakuni.ac.in (e.g., 12345@silveroakuni.ac.in)';
+        case 'admin':
+            return 'Must start with "admin" followed by @silveroakuni.ac.in (e.g., admin@silveroakuni.ac.in)';
+        default:
+            return 'Please select a user type first';
+    }
+}
+
+// Handle forgot password form submission
+function handleForgotPassword(event) {
+    event.preventDefault();
+    
+    // Clear previous errors
+    clearForgotPasswordErrors();
+    
+    // Get form data
+    const email = document.getElementById('forgot-email').value.trim();
+    const userType = document.querySelector('input[name="forgot-user-type"]:checked').value;
+    
+    // Validate email
+    let isValid = true;
+    
+    if (!email) {
+        showForgotPasswordError('forgot-email-error', 'Email address is required');
+        isValid = false;
+    } else if (!isValidEmail(email)) {
+        showForgotPasswordError('forgot-email-error', 'Please enter a valid email address');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        return;
+    }
+    
+    // Simulate sending reset email
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Sending...';
+    submitButton.disabled = true;
+    
+    // Simulate API call delay
+    setTimeout(() => {
+        // In a real application, this would send an email with a reset link
+        console.log(`Password reset requested for ${userType}: ${email}`);
+        
+        // Show success message
+        showForgotPasswordSuccess('forgot-password-success', 
+            'Password reset link has been sent to your email address. Please check your inbox and spam folder.');
+        
+        // Reset button
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+        
+        // Clear form
+        document.getElementById('forgot-email').value = '';
+        
+    }, 2000);
+}
+
+// Handle reset password form submission
+function handleResetPassword(event) {
+    event.preventDefault();
+    
+    // Clear previous errors
+    clearResetPasswordErrors();
+    
+    // Get form data
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    // Validate passwords
+    let isValid = true;
+    
+    if (!newPassword) {
+        showResetPasswordError('new-password-error', 'New password is required');
+        isValid = false;
+    } else if (!isValidPassword(newPassword)) {
+        showResetPasswordError('new-password-error', 'Password must meet all requirements');
+        isValid = false;
+    }
+    
+    if (!confirmPassword) {
+        showResetPasswordError('confirm-password-error', 'Please confirm your password');
+        isValid = false;
+    } else if (newPassword !== confirmPassword) {
+        showResetPasswordError('confirm-password-error', 'Passwords do not match');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        return;
+    }
+    
+    // Simulate password update
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Updating...';
+    submitButton.disabled = true;
+    
+    // Simulate API call delay
+    setTimeout(() => {
+        console.log('Password updated successfully');
+        
+        // Show success message
+        showResetPasswordSuccess('reset-password-success', 
+            'Your password has been updated successfully! You can now log in with your new password.');
+        
+        // Reset button
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+        
+        // Clear form
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+            showLoginPage();
+        }, 3000);
+        
+    }, 2000);
 }
 
 // Initialize all forms
@@ -66,12 +469,20 @@ function initializeForms() {
     const addUserForm = document.getElementById('addUserForm');
     if (addUserForm) {
         addUserForm.addEventListener('submit', handleAddUser);
+        addUserForm.addEventListener('input', () => updateAddUserSubmitState(addUserForm));
+        addUserForm.addEventListener('change', () => updateAddUserSubmitState(addUserForm));
+        // Initial state
+        updateAddUserSubmitState(addUserForm);
     }
     
     // Edit user form
     const editUserForm = document.getElementById('editUserForm');
     if (editUserForm) {
         editUserForm.addEventListener('submit', handleEditUser);
+        editUserForm.addEventListener('input', () => updateEditUserSubmitState(editUserForm));
+        editUserForm.addEventListener('change', () => updateEditUserSubmitState(editUserForm));
+        // Initial state
+        updateEditUserSubmitState(editUserForm);
     }
     
     // Email validation for add user form
@@ -147,7 +558,6 @@ async function handleLogin(event) {
     // Get form data
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
-    const userType = document.querySelector('input[name="user-type"]:checked').value;
     
     // Validate inputs
     if (!validateLoginInputs(username, password)) {
@@ -163,19 +573,25 @@ async function handleLogin(event) {
     try {
         const response = await apiRequest('/auth/login', {
             method: 'POST',
-            body: JSON.stringify({ username, password, role: userType })
+            body: JSON.stringify({ username, password })
         });
         
         // Store authentication data
         authToken = response.token;
         currentUser = response.user;
         
+        // Determine user type (role) from server response
+        const resolvedUserType = response.user?.role;
         localStorage.setItem('authToken', authToken);
-        localStorage.setItem('userType', userType);
+        localStorage.setItem('userType', resolvedUserType);
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
         
-        // Show dashboard
-        showDashboard(userType);
+        // Restore button state so it looks correct after logout returns to login
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+
+        // Show dashboard by role returned from backend
+        showDashboard(resolvedUserType);
         
     } catch (error) {
         showError('login-error', error.message || 'Login failed');
@@ -283,9 +699,65 @@ async function loadStudentDashboard() {
         } catch (error) {
             console.error('Error loading assignment dropdown:', error);
         }
+
+        // Load announcements for student
+        try {
+            const annResponse = await apiRequest('/student/announcements');
+            updateStudentAnnouncements(annResponse.announcements);
+        } catch (error) {
+            console.error('Error loading student announcements:', error);
+        }
+
+        // Load exams schedule
+        try {
+            const examsResponse = await apiRequest('/student/exams');
+            updateStudentExams(examsResponse.exams);
+        } catch (error) {
+            console.error('Error loading student exams:', error);
+        }
         
     } catch (error) {
         console.error('Error loading student dashboard:', error);
+    }
+}
+
+function updateStudentAnnouncements(announcements) {
+    const container = document.getElementById('student-announcements-list');
+    if (container) {
+        container.innerHTML = '';
+        if (announcements && announcements.length) {
+            announcements.forEach(a => {
+                const li = document.createElement('li');
+                li.className = 'bg-gray-50 border-l-4 border-[#8b3d4f] p-3 rounded-md';
+                li.innerHTML = `
+                    <p class="text-sm font-semibold text-gray-800">${a.title}</p>
+                    <p class="text-xs text-gray-500">${new Date(a.publishDate).toLocaleString()} • ${a.author?.name || ''}</p>
+                    <p class="text-sm text-gray-700 mt-1">${a.content}</p>
+                `;
+                container.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.className = 'text-sm text-gray-500';
+            li.textContent = 'No announcements';
+            container.appendChild(li);
+        }
+    }
+}
+
+function updateStudentExams(exams) {
+    const examsTableBody = document.getElementById('student-exams-tbody');
+    if (examsTableBody && exams) {
+        examsTableBody.innerHTML = '';
+        exams.forEach(exam => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${exam.subjectName}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${new Date(exam.examDate).toLocaleDateString()}</td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${exam.examTime}</td>
+            `;
+            examsTableBody.appendChild(tr);
+        });
     }
 }
 
@@ -303,6 +775,11 @@ function updateStudentProfile(student) {
         if (programElement) programElement.textContent = `Program: ${student.program}`;
         if (yearElement) yearElement.textContent = `Year: ${student.year}rd Year, Semester ${student.semester}`;
         if (emailElement) emailElement.textContent = `Email: ${student.userId.email}`;
+        // Update welcome header as well
+        const welcomeElement = document.querySelector('#student-dashboard h2');
+        if (welcomeElement) {
+            welcomeElement.textContent = `Welcome, ${student.userId.firstName}`;
+        }
     }
 }
 
@@ -362,10 +839,19 @@ async function loadFacultyDashboard() {
         // Load faculty profile
         const profileResponse = await apiRequest('/faculty/profile');
         updateFacultyProfile(profileResponse.faculty);
+        updateFacultyCourses(profileResponse.faculty?.subjects || []);
         
         // Load complaints
         const complaintsResponse = await apiRequest('/faculty/complaints');
         updateFacultyComplaints(complaintsResponse.complaints);
+        
+        // Load admin announcements for faculty view
+        try {
+            const annResponse = await apiRequest('/faculty/announcements/feed');
+            updateFacultyAnnouncements(annResponse.announcements);
+        } catch (error) {
+            console.error('Error loading faculty announcements feed:', error);
+        }
         
     } catch (error) {
         console.error('Error loading faculty dashboard:', error);
@@ -376,6 +862,66 @@ function updateFacultyProfile(faculty) {
     const welcomeElement = document.querySelector('#faculty-dashboard h2');
     if (welcomeElement && faculty) {
         welcomeElement.textContent = `Welcome, ${faculty.userId.firstName} ${faculty.userId.lastName}`;
+    }
+}
+
+function updateFacultyCourses(subjects) {
+    // Update the course list and selects on the faculty dashboard
+    const courseList = document.querySelector('#faculty-dashboard ul.list-disc');
+    if (courseList) {
+        courseList.innerHTML = '';
+        if (subjects.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No subjects assigned';
+            courseList.appendChild(li);
+        } else {
+            subjects.forEach(s => {
+                const li = document.createElement('li');
+                li.textContent = `${s.subjectName} (${s.subjectCode})`;
+                courseList.appendChild(li);
+            });
+        }
+    }
+    // Populate selects
+    const selects = document.querySelectorAll('#faculty-dashboard select');
+    selects.forEach(sel => {
+        const current = sel.value;
+        sel.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select a course';
+        sel.appendChild(placeholder);
+        subjects.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.subjectCode;
+            opt.textContent = `${s.subjectName}`;
+            sel.appendChild(opt);
+        });
+        sel.value = current;
+    });
+}
+
+function updateFacultyAnnouncements(announcements) {
+    const container = document.getElementById('faculty-admin-announcements');
+    if (container) {
+        container.innerHTML = '';
+        if (announcements && announcements.length) {
+            announcements.forEach(a => {
+                const li = document.createElement('li');
+                li.className = 'bg-gray-50 border-l-4 border-[#8b3d4f] p-3 rounded-md';
+                li.innerHTML = `
+                    <p class="text-sm font-semibold text-gray-800">${a.title}</p>
+                    <p class="text-xs text-gray-500">${new Date(a.publishDate).toLocaleString()} • ${a.author?.name || ''}</p>
+                    <p class="text-sm text-gray-700 mt-1">${a.content}</p>
+                `;
+                container.appendChild(li);
+            });
+        } else {
+            const li = document.createElement('li');
+            li.className = 'text-sm text-gray-500';
+            li.textContent = 'No announcements';
+            container.appendChild(li);
+        }
     }
 }
 
@@ -481,19 +1027,217 @@ async function submitComplaint() {
     }
 }
 
-// Faculty Functions
+// Grade Management Functions
 async function viewGrades() {
-    const selectedCourse = document.querySelector('#faculty-dashboard select').value;
-    if (!selectedCourse) {
-        showModalMessage("Please select a course first.");
+    try {
+        const selectedCourse = document.querySelector('#faculty-dashboard select').value;
+        if (!selectedCourse) {
+            showModalMessage("Please select a course first.");
+            return;
+        }
+
+        const response = await apiRequest(`/faculty/grades/subject/${selectedCourse}`);
+        if (response.success) {
+            showGradesModal(response.grades, selectedCourse);
+        } else {
+            showModalMessage("Error loading grades: " + response.message);
+        }
+    } catch (error) {
+        showModalMessage("Error loading grades: " + error.message);
+    }
+}
+
+function showGradesModal(grades, subjectCode) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Grades for ${subjectCode}</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrollment</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exam Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marks</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        ${grades.map(grade => `
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${grade.studentId?.userId?.firstName} ${grade.studentId?.userId?.lastName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${grade.enrollmentNumber}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${grade.examType}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${grade.marks.obtained}/${grade.marks.total}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                        grade.grade === 'A+' || grade.grade === 'A' ? 'bg-green-100 text-green-800' :
+                                        grade.grade === 'B+' || grade.grade === 'B' ? 'bg-blue-100 text-blue-800' :
+                                        grade.grade === 'C+' || grade.grade === 'C' ? 'bg-yellow-100 text-yellow-800' :
+                                        grade.grade === 'D' ? 'bg-orange-100 text-orange-800' :
+                                        'bg-red-100 text-red-800'
+                                    }">
+                                        ${grade.grade}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <button onclick="editGrade('${grade._id}')" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                        <button onclick="deleteGrade('${grade._id}', '${grade.studentId?.userId?.firstName} ${grade.studentId?.userId?.lastName}')" class="text-red-600 hover:text-red-900">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function editGrade(gradeId) {
+    try {
+        const response = await apiRequest(`/faculty/grades/${gradeId}`);
+        if (response.success) {
+            showEditGradeModal(response.grade);
+        } else {
+            showModalMessage('Error loading grade: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error loading grade: ' + error.message);
+    }
+}
+
+function showEditGradeModal(grade) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Edit Grade</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="editGradeForm">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Student</label>
+                        <input type="text" value="${grade.studentId?.userId?.firstName} ${grade.studentId?.userId?.lastName}" disabled class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Subject</label>
+                        <input type="text" value="${grade.subjectName}" disabled class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Exam Type</label>
+                        <input type="text" value="${grade.examType}" disabled class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-50">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Obtained Marks</label>
+                            <input type="number" id="edit-grade-marks" value="${grade.marks.obtained}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Total Marks</label>
+                            <input type="number" id="edit-grade-total-marks" value="${grade.marks.total}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Exam Date</label>
+                        <input type="date" id="edit-grade-exam-date" value="${new Date(grade.examDate).toISOString().split('T')[0]}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="edit-grade-status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">
+                            <option value="published" ${grade.status === 'published' ? 'selected' : ''}>Published</option>
+                            <option value="draft" ${grade.status === 'draft' ? 'selected' : ''}>Draft</option>
+                            <option value="under_review" ${grade.status === 'under_review' ? 'selected' : ''}>Under Review</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Remarks</label>
+                        <textarea id="edit-grade-remarks" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">${grade.remarks || ''}</textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" onclick="this.closest('.fixed').remove()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-[#8b3d4f] text-white rounded-md hover:bg-[#a24f63]">Update Grade</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Add form submission handler
+    document.getElementById('editGradeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await updateGrade(grade._id);
+    });
+}
+
+async function updateGrade(gradeId) {
+    try {
+        const marks = document.getElementById('edit-grade-marks').value;
+        const totalMarks = document.getElementById('edit-grade-total-marks').value;
+        const examDate = document.getElementById('edit-grade-exam-date').value;
+        const status = document.getElementById('edit-grade-status').value;
+        const remarks = document.getElementById('edit-grade-remarks').value.trim();
+
+        const response = await apiRequest(`/faculty/grades/${gradeId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                marks: parseInt(marks),
+                totalMarks: parseInt(totalMarks),
+                examDate,
+                status,
+                remarks
+            })
+        });
+
+        if (response.success) {
+            showModalMessage('Grade updated successfully!');
+            document.querySelector('.fixed').remove();
+        } else {
+            showModalMessage('Error updating grade: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error updating grade: ' + error.message);
+    }
+}
+
+async function deleteGrade(gradeId, studentName) {
+    if (!confirm(`Are you sure you want to delete the grade for ${studentName}? This action cannot be undone.`)) {
         return;
     }
 
     try {
-        const response = await apiRequest(`/faculty/grades/subject/${selectedCourse}`);
-        showModalMessage(`Displaying grades for ${selectedCourse}. Found ${response.grades.length} records.`);
+        const response = await apiRequest(`/faculty/grades/${gradeId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.success) {
+            showModalMessage('Grade deleted successfully!');
+            // Refresh grades list
+            viewGrades();
+        } else {
+            showModalMessage('Error deleting grade: ' + response.message);
+        }
     } catch (error) {
-        showModalMessage("Error loading grades: " + error.message);
+        showModalMessage('Error deleting grade: ' + error.message);
     }
 }
 
@@ -516,25 +1260,569 @@ function handleTokenExpiration() {
 }
 
 // Faculty Functions
+function openCreateAssignmentModal() {
+    const modal = document.getElementById('createAssignmentModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('page-transition');
+}
+
+function closeCreateAssignmentModal() {
+    const modal = document.getElementById('createAssignmentModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('page-transition');
+}
+
+function openViewGradesModal() {
+    const modal = document.getElementById('viewGradesModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('page-transition');
+    // Load grades when modal opens
+    loadGradesForSubject();
+    
+    // Add event listener for subject change
+    const subjectSelect = document.getElementById('grades-subject');
+    if (subjectSelect) {
+        subjectSelect.addEventListener('change', loadGradesForSubject);
+    }
+}
+
+function closeViewGradesModal() {
+    const modal = document.getElementById('viewGradesModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('page-transition');
+}
+
+function openMarkAttendanceModal() {
+    const modal = document.getElementById('markAttendanceModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('page-transition');
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('attendance-date').value = today;
+    // Load students when modal opens
+    loadStudentsForAttendance();
+    
+    // Add event listener for subject change
+    const subjectSelect = document.getElementById('attendance-subject');
+    if (subjectSelect) {
+        subjectSelect.addEventListener('change', loadStudentsForAttendance);
+    }
+}
+
+function closeMarkAttendanceModal() {
+    const modal = document.getElementById('markAttendanceModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('page-transition');
+}
+
+async function loadGradesForSubject() {
+    try {
+        const subjectCode = document.getElementById('grades-subject').value;
+        
+        if (!subjectCode) {
+            document.getElementById('grades-content').innerHTML = '<p class="text-gray-500">Please select a subject to view grades.</p>';
+            return;
+        }
+
+        const response = await apiRequest(`/faculty/grades/subject/${subjectCode}`, {
+            method: 'GET'
+        });
+
+        if (response.success && response.grades) {
+            const grades = response.grades;
+            let html = '<div class="space-y-3">';
+            
+            grades.forEach(grade => {
+                html += `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <span class="font-medium">${grade.studentId.userId.firstName} ${grade.studentId.userId.lastName}</span>
+                            <span class="text-gray-500 ml-2">(${grade.studentId.enrollmentNumber})</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="number" id="grade-${grade.studentId._id}" value="${grade.marks.obtained || ''}" min="0" max="100" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm">
+                            <button onclick="updateGrade('${grade.studentId._id}', '${subjectCode}')" class="px-3 py-1 bg-[#8b3d4f] text-white text-sm rounded hover:bg-[#a24f63]">Update</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            document.getElementById('grades-content').innerHTML = html;
+        } else {
+            document.getElementById('grades-content').innerHTML = '<p class="text-gray-500">No grades found for this subject.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading grades:', error);
+        document.getElementById('grades-content').innerHTML = '<p class="text-red-500">Error loading grades.</p>';
+    }
+}
+
+async function loadStudentsForAttendance() {
+    try {
+        const subjectCode = document.getElementById('attendance-subject').value;
+        
+        if (!subjectCode) {
+            document.getElementById('students-list').innerHTML = '<p class="text-gray-500">Please select a subject first.</p>';
+            return;
+        }
+
+        const response = await apiRequest(`/faculty/students/subject/${subjectCode}`, {
+            method: 'GET'
+        });
+
+        if (response.success && response.students) {
+            const students = response.students;
+            let html = '<div class="space-y-2">';
+            
+            students.forEach(student => {
+                html += `
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div>
+                            <span class="font-medium">${student.userId.firstName} ${student.userId.lastName}</span>
+                            <span class="text-gray-500 ml-2">(${student.enrollmentNumber})</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="attendance-${student._id}" value="present" checked class="mr-1">
+                                <span class="text-sm">Present</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="attendance-${student._id}" value="absent" class="mr-1">
+                                <span class="text-sm">Absent</span>
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            document.getElementById('students-list').innerHTML = html;
+        } else {
+            document.getElementById('students-list').innerHTML = '<p class="text-gray-500">No students found for this subject.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading students:', error);
+        document.getElementById('students-list').innerHTML = '<p class="text-red-500">Error loading students.</p>';
+    }
+}
+
 async function createNewAssignment() {
     try {
-        showModalMessage('Create New Assignment functionality will be implemented soon!');
+        const title = document.getElementById('assignment-title')?.value?.trim();
+        const description = document.getElementById('assignment-description')?.value?.trim();
+        const subjectCode = document.getElementById('assignment-subject')?.value;
+        const dueDate = document.getElementById('assignment-due-date')?.value;
+        const maxMarks = document.getElementById('assignment-max-marks')?.value;
+        const instructions = document.getElementById('assignment-instructions')?.value?.trim();
+
+        if (!title || !description || !subjectCode || !dueDate || !maxMarks) {
+            showModalMessage('Please fill in all required fields.');
+            return;
+        }
+
+        const response = await apiRequest('/faculty/assignments', {
+            method: 'POST',
+            body: JSON.stringify({
+                title,
+                description,
+                subjectCode,
+                dueDate,
+                maxMarks: parseInt(maxMarks),
+                instructions
+            })
+        });
+
+        if (response.success) {
+            showModalMessage('Assignment created successfully!');
+            // Clear form
+            document.getElementById('assignment-title').value = '';
+            document.getElementById('assignment-description').value = '';
+            document.getElementById('assignment-subject').value = '';
+            document.getElementById('assignment-due-date').value = '';
+            document.getElementById('assignment-max-marks').value = '';
+            document.getElementById('assignment-instructions').value = '';
+            // Close modal
+            closeCreateAssignmentModal();
+        } else {
+            showModalMessage('Error creating assignment: ' + response.message);
+        }
     } catch (error) {
         showModalMessage('Error creating assignment: ' + error.message);
     }
 }
 
-async function markAttendance() {
+async function updateGrade(studentId, subjectCode) {
     try {
-        showModalMessage('Mark Attendance functionality will be implemented soon!');
+        const marks = document.getElementById(`grade-${studentId}`).value;
+        
+        if (!marks || marks < 0 || marks > 100) {
+            showModalMessage('Please enter valid marks (0-100).');
+            return;
+        }
+
+        const response = await apiRequest('/faculty/grades', {
+            method: 'POST',
+            body: JSON.stringify({
+                studentId,
+                subjectCode,
+                examType: 'assignment',
+                marks: parseInt(marks),
+                totalMarks: 100,
+                examDate: new Date().toISOString().split('T')[0]
+            })
+        });
+
+        if (response.success) {
+            showModalMessage('Grade updated successfully!');
+        } else {
+            showModalMessage('Error updating grade: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error updating grade: ' + error.message);
+    }
+}
+
+async function submitAttendance() {
+    try {
+        const subjectCode = document.getElementById('attendance-subject').value;
+        const date = document.getElementById('attendance-date').value;
+
+        if (!subjectCode || !date) {
+            showModalMessage('Please select subject and date.');
+            return;
+        }
+
+        // Collect attendance data for all students
+        const attendanceData = [];
+        const studentElements = document.querySelectorAll('[name^="attendance-"]');
+        
+        studentElements.forEach(element => {
+            if (element.type === 'radio' && element.checked) {
+                const studentId = element.name.replace('attendance-', '');
+                const status = element.value;
+                attendanceData.push({
+                    studentId,
+                    subjectCode,
+                    date,
+                    status,
+                    classTime: {
+                        start: '09:00',
+                        end: '10:00'
+                    },
+                    room: 'Classroom A'
+                });
+            }
+        });
+
+        if (attendanceData.length === 0) {
+            showModalMessage('Please mark attendance for at least one student.');
+            return;
+        }
+
+        // Submit each attendance record individually
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const attendance of attendanceData) {
+            try {
+                const response = await apiRequest('/faculty/attendance', {
+                    method: 'POST',
+                    body: JSON.stringify(attendance)
+                });
+                
+                if (response.success) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                }
+            } catch (error) {
+                errorCount++;
+            }
+        }
+
+        if (successCount > 0) {
+            showModalMessage(`Attendance marked successfully for ${successCount} students!`);
+            closeMarkAttendanceModal();
+        } else {
+            showModalMessage('Error marking attendance for all students.');
+        }
     } catch (error) {
         showModalMessage('Error marking attendance: ' + error.message);
     }
 }
 
+async function markAttendance() {
+    try {
+        const studentId = document.getElementById('attendance-student')?.value;
+        const subjectCode = document.getElementById('attendance-subject')?.value;
+        const date = document.getElementById('attendance-date')?.value;
+        const status = document.getElementById('attendance-status')?.value;
+        const classTimeStart = document.getElementById('class-time-start')?.value;
+        const classTimeEnd = document.getElementById('class-time-end')?.value;
+        const room = document.getElementById('attendance-room')?.value?.trim();
+        const remarks = document.getElementById('attendance-remarks')?.value?.trim();
+
+        if (!studentId || !subjectCode || !date || !status || !classTimeStart || !classTimeEnd || !room) {
+            showModalMessage('Please fill in all required fields.');
+            return;
+        }
+
+        const response = await apiRequest('/faculty/attendance', {
+            method: 'POST',
+            body: JSON.stringify({
+                studentId,
+                subjectCode,
+                date,
+                status,
+                classTime: {
+                    start: classTimeStart,
+                    end: classTimeEnd
+                },
+                room,
+                remarks
+            })
+        });
+
+        if (response.success) {
+            showModalMessage('Attendance marked successfully!');
+            // Clear form
+            document.getElementById('attendance-student').value = '';
+            document.getElementById('attendance-subject').value = '';
+            document.getElementById('attendance-date').value = '';
+            document.getElementById('attendance-status').value = '';
+            document.getElementById('class-time-start').value = '';
+            document.getElementById('class-time-end').value = '';
+            document.getElementById('attendance-room').value = '';
+            document.getElementById('attendance-remarks').value = '';
+        } else {
+            showModalMessage('Error marking attendance: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error marking attendance: ' + error.message);
+    }
+}
+
+// Assignment Management Functions
+async function viewAssignments() {
+    try {
+        const response = await apiRequest('/faculty/assignments');
+        if (response.success) {
+            showAssignmentsModal(response.assignments);
+        } else {
+            showModalMessage('Error loading assignments: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error loading assignments: ' + error.message);
+    }
+}
+
+function showAssignmentsModal(assignments) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">My Assignments</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        ${assignments.map(assignment => `
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${assignment.title}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${assignment.subjectName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(assignment.dueDate).toLocaleDateString()}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                        assignment.status === 'active' ? 'bg-green-100 text-green-800' :
+                                        assignment.status === 'closed' ? 'bg-gray-100 text-gray-800' :
+                                        'bg-red-100 text-red-800'
+                                    }">
+                                        ${assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <button onclick="editAssignment('${assignment._id}')" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                        <button onclick="deleteAssignment('${assignment._id}', '${assignment.title}')" class="text-red-600 hover:text-red-900">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function editAssignment(assignmentId) {
+    try {
+        const response = await apiRequest(`/faculty/assignments/${assignmentId}`);
+        if (response.success) {
+            showEditAssignmentModal(response.assignment);
+        } else {
+            showModalMessage('Error loading assignment: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error loading assignment: ' + error.message);
+    }
+}
+
+function showEditAssignmentModal(assignment) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Edit Assignment</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="editAssignmentForm">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" id="edit-assignment-title" value="${assignment.title}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="edit-assignment-description" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">${assignment.description}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Due Date</label>
+                        <input type="date" id="edit-assignment-due-date" value="${new Date(assignment.dueDate).toISOString().split('T')[0]}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Max Marks</label>
+                        <input type="number" id="edit-assignment-max-marks" value="${assignment.maxMarks}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="edit-assignment-status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">
+                            <option value="active" ${assignment.status === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="closed" ${assignment.status === 'closed' ? 'selected' : ''}>Closed</option>
+                            <option value="cancelled" ${assignment.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Instructions</label>
+                        <textarea id="edit-assignment-instructions" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#8b3d4f] focus:border-[#8b3d4f]">${assignment.instructions || ''}</textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" onclick="this.closest('.fixed').remove()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-[#8b3d4f] text-white rounded-md hover:bg-[#a24f63]">Update Assignment</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Add form submission handler
+    document.getElementById('editAssignmentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await updateAssignment(assignment._id);
+    });
+}
+
+async function updateAssignment(assignmentId) {
+    try {
+        const title = document.getElementById('edit-assignment-title').value.trim();
+        const description = document.getElementById('edit-assignment-description').value.trim();
+        const dueDate = document.getElementById('edit-assignment-due-date').value;
+        const maxMarks = document.getElementById('edit-assignment-max-marks').value;
+        const status = document.getElementById('edit-assignment-status').value;
+        const instructions = document.getElementById('edit-assignment-instructions').value.trim();
+
+        const response = await apiRequest(`/faculty/assignments/${assignmentId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                title,
+                description,
+                dueDate,
+                maxMarks: parseInt(maxMarks),
+                status,
+                instructions
+            })
+        });
+
+        if (response.success) {
+            showModalMessage('Assignment updated successfully!');
+            document.querySelector('.fixed').remove();
+        } else {
+            showModalMessage('Error updating assignment: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error updating assignment: ' + error.message);
+    }
+}
+
+async function deleteAssignment(assignmentId, assignmentTitle) {
+    if (!confirm(`Are you sure you want to delete "${assignmentTitle}"? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest(`/faculty/assignments/${assignmentId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.success) {
+            showModalMessage('Assignment deleted successfully!');
+            // Refresh assignments list
+            viewAssignments();
+        } else {
+            showModalMessage('Error deleting assignment: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error deleting assignment: ' + error.message);
+    }
+}
+
 async function postFacultyAnnouncement() {
     try {
-        showModalMessage('Post Faculty Announcement functionality will be implemented soon!');
+        // Find textarea by id
+        const textarea = document.getElementById('faculty-announcement-text');
+        const content = textarea ? textarea.value.trim() : '';
+        if (!content) {
+            showModalMessage('Please enter announcement content.');
+            return;
+        }
+        const body = {
+            title: 'Announcement',
+            content,
+            targetAudience: 'students'
+        };
+        const response = await apiRequest('/faculty/announcements', {
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+        if (response.success) {
+            showModalMessage('Announcement posted successfully!');
+            if (textarea) textarea.value = '';
+        } else {
+            showModalMessage('Failed to post announcement: ' + (response.message || 'Unknown error'));
+        }
     } catch (error) {
         showModalMessage('Error posting announcement: ' + error.message);
     }
@@ -542,7 +1830,27 @@ async function postFacultyAnnouncement() {
 
 async function postAdminAnnouncement() {
     try {
-        showModalMessage('Post Admin Announcement functionality will be implemented soon!');
+        const textarea = document.getElementById('admin-announcement-text');
+        const content = textarea ? textarea.value.trim() : '';
+        if (!content) {
+            showModalMessage('Please enter announcement content.');
+            return;
+        }
+        const body = {
+            title: 'Announcement',
+            content,
+            targetAudience: 'all'
+        };
+        const response = await apiRequest('/admin/announcements', {
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+        if (response.success) {
+            showModalMessage('Announcement posted successfully!');
+            if (textarea) textarea.value = '';
+        } else {
+            showModalMessage('Failed to post announcement: ' + (response.message || 'Unknown error'));
+        }
     } catch (error) {
         showModalMessage('Error posting announcement: ' + error.message);
     }
@@ -744,6 +2052,13 @@ function logout() {
         dashboard.classList.add('hidden');
     });
     document.getElementById('login-page').classList.remove('hidden');
+    // Reset login button state
+    const loginForm = document.getElementById('login-form');
+    const submitButton = loginForm ? loginForm.querySelector('button[type="submit"]') : null;
+    if (submitButton) {
+        submitButton.textContent = 'Login';
+        submitButton.disabled = false;
+    }
 }
 
 // UI Helper Functions
@@ -966,6 +2281,217 @@ async function viewAllStudents() {
     }
 }
 
+// Admin Assignment Management
+async function viewAllAssignments() {
+    try {
+        const response = await apiRequest('/admin/assignments');
+        if (response.success) {
+            showAdminAssignmentsModal(response.assignments);
+        } else {
+            showModalMessage('Error loading assignments: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error loading assignments: ' + error.message);
+    }
+}
+
+function showAdminAssignmentsModal(assignments) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">All Assignments</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submissions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        ${assignments.map(assignment => `
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${assignment.title}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${assignment.facultyId?.userId?.firstName} ${assignment.facultyId?.userId?.lastName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${assignment.subjectName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(assignment.dueDate).toLocaleDateString()}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                        assignment.status === 'active' ? 'bg-green-100 text-green-800' :
+                                        assignment.status === 'closed' ? 'bg-gray-100 text-gray-800' :
+                                        'bg-red-100 text-red-800'
+                                    }">
+                                        ${assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${assignment.submissions.length}/${assignment.assignedTo.length}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Admin Grade Management
+async function viewAllGrades() {
+    try {
+        const response = await apiRequest('/admin/grades');
+        if (response.success) {
+            showAdminGradesModal(response.grades);
+        } else {
+            showModalMessage('Error loading grades: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error loading grades: ' + error.message);
+    }
+}
+
+function showAdminGradesModal(grades) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">All Grades</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exam Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marks</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        ${grades.map(grade => `
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${grade.studentId?.userId?.firstName} ${grade.studentId?.userId?.lastName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${grade.subjectName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${grade.facultyId?.userId?.firstName} ${grade.facultyId?.userId?.lastName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${grade.examType}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${grade.marks.obtained}/${grade.marks.total}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                        grade.grade === 'A+' || grade.grade === 'A' ? 'bg-green-100 text-green-800' :
+                                        grade.grade === 'B+' || grade.grade === 'B' ? 'bg-blue-100 text-blue-800' :
+                                        grade.grade === 'C+' || grade.grade === 'C' ? 'bg-yellow-100 text-yellow-800' :
+                                        grade.grade === 'D' ? 'bg-orange-100 text-orange-800' :
+                                        'bg-red-100 text-red-800'
+                                    }">
+                                        ${grade.grade}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                        grade.status === 'published' ? 'bg-green-100 text-green-800' :
+                                        grade.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-blue-100 text-blue-800'
+                                    }">
+                                        ${grade.status.charAt(0).toUpperCase() + grade.status.slice(1)}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Admin Attendance Management
+async function viewAllAttendance() {
+    try {
+        const response = await apiRequest('/admin/attendance');
+        if (response.success) {
+            showAdminAttendanceModal(response.attendance);
+        } else {
+            showModalMessage('Error loading attendance: ' + response.message);
+        }
+    } catch (error) {
+        showModalMessage('Error loading attendance: ' + error.message);
+    }
+}
+
+function showAdminAttendanceModal(attendance) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50';
+    modal.innerHTML = `
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">All Attendance Records</h3>
+                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        ${attendance.map(record => `
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${record.studentId?.userId?.firstName} ${record.studentId?.userId?.lastName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.subjectName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.facultyId?.userId?.firstName} ${record.facultyId?.userId?.lastName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(record.date).toLocaleDateString()}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                        record.status === 'present' ? 'bg-green-100 text-green-800' :
+                                        record.status === 'absent' ? 'bg-red-100 text-red-800' :
+                                        record.status === 'late' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-blue-100 text-blue-800'
+                                    }">
+                                        ${record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.room}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
 async function viewAllFaculty() {
     try {
         // Check authentication first
@@ -1097,40 +2623,36 @@ function closeUsersListModal() {
 
 async function handleAddUser(event) {
     event.preventDefault();
+    // Validate inline and prevent submit if invalid
+    if (!validateAddUserForm(event.target, true)) {
+        updateAddUserSubmitState(event.target);
+        return;
+    }
     
+    const form = event.target;
     const formData = {
-        username: document.getElementById('username').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        password: document.getElementById('password').value,
-        firstName: document.getElementById('firstName').value.trim(),
-        lastName: document.getElementById('lastName').value.trim(),
-        role: document.getElementById('userRole').value,
-        phone: document.getElementById('phone').value.trim()
+        username: form.querySelector('#username').value.trim(),
+        email: form.querySelector('#email').value.trim(),
+        password: form.querySelector('#password').value,
+        firstName: form.querySelector('#firstName').value.trim(),
+        lastName: form.querySelector('#lastName').value.trim(),
+        role: form.querySelector('#userRole').value,
+        phone: (form.querySelector('#phone') && form.querySelector('#phone').value ? form.querySelector('#phone').value.trim() : '')
     };
     
     // Add role-specific fields
     const role = formData.role;
     if (role === 'student') {
-        formData.studentId = document.getElementById('studentId').value.trim();
-        formData.course = document.getElementById('course').value.trim();
-        formData.semester = document.getElementById('semester').value;
+        formData.studentId = (form.querySelector('#studentId') && form.querySelector('#studentId').value ? form.querySelector('#studentId').value.trim() : '');
+        formData.course = (form.querySelector('#course') && form.querySelector('#course').value ? form.querySelector('#course').value.trim() : '');
+        formData.semester = form.querySelector('#semester') && form.querySelector('#semester').value ? Number(form.querySelector('#semester').value) : undefined;
     } else if (role === 'faculty') {
-        formData.employeeId = document.getElementById('employeeId').value.trim();
-        formData.department = document.getElementById('department').value.trim();
-        formData.designation = document.getElementById('designation').value.trim();
+        formData.employeeId = (form.querySelector('#employeeId') && form.querySelector('#employeeId').value ? form.querySelector('#employeeId').value.trim() : '');
+        formData.department = (form.querySelector('#department') && form.querySelector('#department').value ? form.querySelector('#department').value.trim() : '');
+        formData.designation = (form.querySelector('#designation') && form.querySelector('#designation').value ? form.querySelector('#designation').value.trim() : '');
     }
     
-    // Validate form
-    if (!formData.username || !formData.email || !formData.password || 
-        !formData.firstName || !formData.lastName || !formData.role) {
-        showModalMessage('Please fill in all required fields.');
-        return;
-    }
-    
-    if (formData.password.length < 6) {
-        showModalMessage('Password must be at least 6 characters long.');
-        return;
-    }
+    // Validated above; continue
     
     try {
         const response = await apiRequest('/admin/users', {
@@ -1169,7 +2691,7 @@ async function editUser(userId) {
         const response = await apiRequest(`/admin/users/${userId}`);
         
         if (response.success) {
-            showEditUserModal(response.user);
+            showEditUserModal(response.user, response.roleData);
         } else {
             showModalMessage('Error loading user details: ' + response.message);
         }
@@ -1179,7 +2701,7 @@ async function editUser(userId) {
     }
 }
 
-function showEditUserModal(user) {
+function showEditUserModal(user, roleData = {}) {
     const modal = document.getElementById('editUserModal');
     
     // Close users list modal if it's open
@@ -1200,6 +2722,24 @@ function showEditUserModal(user) {
     
     // Show/hide role-specific fields
     toggleEditRoleFields(user.role);
+    // Populate role-specific fields when available
+    if (user.role === 'faculty' && roleData) {
+        const emp = document.getElementById('editEmployeeId');
+        const dept = document.getElementById('editDepartment');
+        const desig = document.getElementById('editDesignation');
+        if (emp) emp.value = roleData.employeeId || '';
+        if (dept) dept.value = roleData.department || '';
+        if (desig) desig.value = roleData.designation || '';
+    } else if (user.role === 'student' && roleData) {
+        const sid = document.getElementById('editStudentId');
+        const course = document.getElementById('editCourse');
+        const sem = document.getElementById('editSemester');
+        const dept = document.getElementById('editDepartment');
+        if (sid) sid.value = roleData.enrollmentNumber || '';
+        if (course) course.value = roleData.program || '';
+        if (dept && roleData.department) dept.value = roleData.department;
+        if (sem && roleData.semester) sem.value = String(roleData.semester);
+    }
     
     // Add event listener for role change
     const roleSelect = document.getElementById('editUserRole');
@@ -1250,6 +2790,11 @@ function closeEditUserModal() {
 
 async function handleEditUser(event) {
     event.preventDefault();
+    // Validate inline and prevent submit if invalid
+    if (!validateEditUserForm(event.target, true)) {
+        updateEditUserSubmitState(event.target);
+        return;
+    }
     
     const formData = {
         firstName: document.getElementById('editFirstName').value.trim(),
@@ -1376,84 +2921,6 @@ function checkAuthStatus() {
     });
     
     return true;
-}
-
-// Email validation functions
-function validateStudentEmail(email) {
-    const pattern = /^[0-9]{13}@silveroakuni\.ac\.in$/;
-    return pattern.test(email);
-}
-
-function validateFacultyEmail(email) {
-    const pattern = /^[0-9]{5,7}@silveroakuni\.ac\.in$/;
-    return pattern.test(email);
-}
-
-function validateAdminEmail(email) {
-    const pattern = /^admin[a-z]*@silveroakuni\.ac\.in$/;
-    return pattern.test(email);
-}
-
-function validateEmailByRole(email, role) {
-    switch (role) {
-        case 'student':
-            return validateStudentEmail(email);
-        case 'faculty':
-            return validateFacultyEmail(email);
-        case 'admin':
-            return validateAdminEmail(email);
-        default:
-            return false;
-    }
-}
-
-function getEmailValidationMessage(role) {
-    switch (role) {
-        case 'student':
-            return 'Must be a 13-digit number followed by @silveroakuni.ac.in (e.g., 1234567890123@silveroakuni.ac.in)';
-        case 'faculty':
-            return 'Must be a 5-7 digit number followed by @silveroakuni.ac.in (e.g., 12345@silveroakuni.ac.in)';
-        case 'admin':
-            return 'Must start with "admin" followed by @silveroakuni.ac.in (e.g., admin@silveroakuni.ac.in)';
-        default:
-            return 'Please select a user type first';
-    }
-}
-
-function showEmailValidation(emailInput, role) {
-    const email = emailInput.value.trim();
-    const isValid = validateEmailByRole(email, role);
-    const message = getEmailValidationMessage(role);
-    
-    // Remove existing validation elements
-    const existingError = emailInput.parentNode.querySelector('.email-validation-error');
-    const existingHelp = emailInput.parentNode.querySelector('.email-validation-help');
-    
-    if (existingError) existingError.remove();
-    if (existingHelp) existingHelp.remove();
-    
-    if (email && role) {
-        if (isValid) {
-            emailInput.classList.remove('border-red-500');
-            emailInput.classList.add('border-green-500');
-        } else {
-            emailInput.classList.remove('border-green-500');
-            emailInput.classList.add('border-red-500');
-            
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'email-validation-error text-red-500 text-xs mt-1';
-            errorDiv.textContent = message;
-            emailInput.parentNode.appendChild(errorDiv);
-        }
-        
-        // Add help text
-        const helpDiv = document.createElement('div');
-        helpDiv.className = 'email-validation-help text-gray-500 text-xs mt-1';
-        helpDiv.textContent = message;
-        emailInput.parentNode.appendChild(helpDiv);
-    } else {
-        emailInput.classList.remove('border-red-500', 'border-green-500');
-    }
 }
 
 // Statistics Functions

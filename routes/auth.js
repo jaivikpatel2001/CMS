@@ -26,21 +26,19 @@ const generateToken = (userId) => {
     return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn });
 };
 
-// Login route
+// Login route (role-less)
 router.post('/login', validateRequest({
     username: { required: true, minLength: 3 },
-    password: { required: true, minLength: 6 },
-    role: { required: true, enum: ['student', 'faculty', 'admin'] }
+    password: { required: true, minLength: 6 }
 }), asyncHandler(async (req, res) => {
-    const { username, password, role } = req.body;
+    const { username, password } = req.body;
 
-    // Find user by username or email
+    // Find active user by username or email (role inferred from user record)
     const user = await User.findOne({
         $or: [
             { username: username.toLowerCase() },
             { email: username.toLowerCase() }
         ],
-        role: role,
         isActive: true
     });
 
@@ -67,11 +65,11 @@ router.post('/login', validateRequest({
     // Generate token
     const token = generateToken(user._id);
 
-    // Get role-specific data
+    // Get role-specific data (based on user.role)
     let roleData = {};
-    if (role === 'student') {
+    if (user.role === 'student') {
         roleData = await Student.findOne({ userId: user._id });
-    } else if (role === 'faculty') {
+    } else if (user.role === 'faculty') {
         roleData = await Faculty.findOne({ userId: user._id });
     }
 

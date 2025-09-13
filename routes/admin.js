@@ -216,28 +216,32 @@ router.post('/users', validateRequest({
 
     // Create role-specific record
     if (role === 'student') {
-        const enrollmentNumber = `C${Date.now().toString().slice(-6)}`;
+        const providedSemester = Number(req.body.semester) || 1;
+        const computedYear = Math.min(4, Math.max(1, Math.ceil(providedSemester / 2)));
+        const enrollmentNumber = (req.body.studentId ? String(req.body.studentId).trim().toUpperCase() : '') || `C${Date.now().toString().slice(-6)}`;
         const student = new Student({
             userId: user._id,
             enrollmentNumber,
-            program: 'Diploma in IT',
-            year: 1,
-            semester: 1,
-            department: 'Information Technology',
+            program: (req.body.course || 'Diploma in IT').trim(),
+            year: computedYear,
+            semester: providedSemester,
+            department: (req.body.department || 'Information Technology').trim(),
             fees: {
                 semesterFees: 20000,
                 status: 'pending',
-                nextPaymentDue: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+                nextPaymentDue: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
             }
         });
         await student.save();
     } else if (role === 'faculty') {
-        const employeeId = `F${Date.now().toString().slice(-6)}`;
+        const employeeId = (req.body.employeeId ? String(req.body.employeeId).trim().toUpperCase() : '') || `F${Date.now().toString().slice(-6)}`;
+        const designation = req.body.designation || 'Lecturer';
+        const department = req.body.department || 'Information Technology';
         const faculty = new Faculty({
             userId: user._id,
             employeeId,
-            department: 'Information Technology',
-            designation: 'Lecturer',
+            department: department.trim(),
+            designation: designation,
             specialization: 'Computer Science',
             qualification: 'M.Tech',
             experience: 0,
@@ -278,6 +282,8 @@ router.put('/users/:id', asyncHandler(async (req, res) => {
         });
     }
 
+    const previousRole = user.role;
+
     // Update basic user fields
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
@@ -314,50 +320,93 @@ router.put('/users/:id', asyncHandler(async (req, res) => {
     await user.save();
 
     // Update role-specific data if role changed
-    if (role && role !== user.role) {
-        // Remove old role-specific data
-        if (user.role === 'student') {
+    if (role && role !== previousRole) {
+        // Remove old role-specific data based on previous role
+        if (previousRole === 'student') {
             await Student.findOneAndDelete({ userId: user._id });
-        } else if (user.role === 'faculty') {
+        } else if (previousRole === 'faculty') {
             await Faculty.findOneAndDelete({ userId: user._id });
         }
 
-        // Create new role-specific data
+        // Create new role-specific data based on new role
         if (role === 'student') {
+            const providedSemester = Number(req.body.semester) || 1;
+            const computedYear = Math.min(4, Math.max(1, Math.ceil(providedSemester / 2)));
+            const enrollmentNumber = (req.body.studentId ? String(req.body.studentId).trim().toUpperCase() : '') || `C${Date.now().toString().slice(-6)}`;
             const student = new Student({
                 userId: user._id,
-                studentId: req.body.studentId || `STU${Date.now()}`,
-                course: req.body.course || '',
-                semester: req.body.semester || 1
+                enrollmentNumber,
+                program: (req.body.course || 'Diploma in IT').trim(),
+                year: computedYear,
+                semester: providedSemester,
+                department: (req.body.department || 'Information Technology').trim()
             });
             await student.save();
         } else if (role === 'faculty') {
+            const employeeId = (req.body.employeeId ? String(req.body.employeeId).trim().toUpperCase() : '') || `F${Date.now().toString().slice(-6)}`;
+            const designation = req.body.designation || 'Lecturer';
+            const department = req.body.department || 'Information Technology';
             const faculty = new Faculty({
                 userId: user._id,
-                employeeId: req.body.employeeId || `EMP${Date.now()}`,
-                department: req.body.department || '',
-                designation: req.body.designation || ''
+                employeeId,
+                department: department.trim(),
+                designation: designation,
+                specialization: 'Computer Science',
+                qualification: 'M.Tech',
+                experience: 0,
+                joiningDate: new Date(),
+                salary: {
+                    basic: 50000,
+                    allowances: 10000,
+                    total: 60000
+                }
             });
             await faculty.save();
         }
     } else {
         // Update existing role-specific data
         if (user.role === 'student') {
-            const student = await Student.findOne({ userId: user._id });
-            if (student) {
-                if (req.body.studentId) student.studentId = req.body.studentId;
-                if (req.body.course) student.course = req.body.course;
-                if (req.body.semester) student.semester = req.body.semester;
-                await student.save();
+            let student = await Student.findOne({ userId: user._id });
+            if (!student) {
+                // Create missing student document on the fly
+                const providedSemester = Number(req.body.semester) || 1;
+                const computedYear = Math.min(4, Math.max(1, Math.ceil(providedSemester / 2)));
+                student = new Student({
+                    userId: user._id,
+                    enrollmentNumber: (req.body.studentId ? String(req.body.studentId).trim().toUpperCase() : '') || `C${Date.now().toString().slice(-6)}`,
+                    program: (req.body.course || 'Diploma in IT').trim(),
+                    year: computedYear,
+                    semester: providedSemester,
+                    department: (req.body.department || 'Information Technology').trim()
+                });
+            } else {
+                if (req.body.studentId) student.enrollmentNumber = String(req.body.studentId).trim().toUpperCase();
+                if (req.body.course) student.program = req.body.course;
+                if (req.body.department) student.department = req.body.department;
+                if (req.body.semester) student.semester = Number(req.body.semester);
             }
+            await student.save();
         } else if (user.role === 'faculty') {
-            const faculty = await Faculty.findOne({ userId: user._id });
-            if (faculty) {
+            let faculty = await Faculty.findOne({ userId: user._id });
+            if (!faculty) {
+                // Create missing faculty document on the fly
+                faculty = new Faculty({
+                    userId: user._id,
+                    employeeId: (req.body.employeeId ? String(req.body.employeeId).trim().toUpperCase() : '') || `F${Date.now().toString().slice(-6)}`,
+                    department: (req.body.department || 'Information Technology').trim(),
+                    designation: req.body.designation || 'Lecturer',
+                    specialization: 'Computer Science',
+                    qualification: 'M.Tech',
+                    experience: 0,
+                    joiningDate: new Date(),
+                    salary: { basic: 50000, allowances: 10000, total: 60000 }
+                });
+            } else {
                 if (req.body.employeeId) faculty.employeeId = req.body.employeeId;
                 if (req.body.department) faculty.department = req.body.department;
                 if (req.body.designation) faculty.designation = req.body.designation;
-                await faculty.save();
             }
+            await faculty.save();
         }
     }
 
@@ -549,6 +598,24 @@ router.put('/complaints/:id', validateRequest({
         success: true,
         message: 'Complaint status updated successfully',
         complaint
+    });
+}));
+
+// Delete complaint
+router.delete('/complaints/:id', asyncHandler(async (req, res) => {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+        return res.status(404).json({
+            success: false,
+            message: 'Complaint not found'
+        });
+    }
+
+    await Complaint.findByIdAndDelete(req.params.id);
+
+    res.json({
+        success: true,
+        message: 'Complaint deleted successfully'
     });
 }));
 
@@ -797,6 +864,115 @@ router.get('/dashboard', asyncHandler(async (req, res) => {
             },
             recentComplaints,
             announcements
+        }
+    });
+}));
+
+// Get all assignments (admin view)
+router.get('/assignments', asyncHandler(async (req, res) => {
+    const { status, facultyId, page = 1, limit = 10 } = req.query;
+    
+    let query = {};
+    if (status) {
+        query.status = status;
+    }
+    if (facultyId) {
+        query.facultyId = facultyId;
+    }
+
+    const assignments = await Assignment.find(query)
+        .populate('facultyId', 'userId employeeId')
+        .populate('facultyId.userId', 'firstName lastName')
+        .sort({ createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+
+    const total = await Assignment.countDocuments(query);
+
+    res.json({
+        success: true,
+        assignments,
+        pagination: {
+            current: parseInt(page),
+            pages: Math.ceil(total / limit),
+            total
+        }
+    });
+}));
+
+// Get all grades (admin view)
+router.get('/grades', asyncHandler(async (req, res) => {
+    const { studentId, facultyId, subjectCode, page = 1, limit = 10 } = req.query;
+    
+    let query = {};
+    if (studentId) {
+        query.studentId = studentId;
+    }
+    if (facultyId) {
+        query.facultyId = facultyId;
+    }
+    if (subjectCode) {
+        query.subjectCode = subjectCode;
+    }
+
+    const grades = await Grade.find(query)
+        .populate('studentId', 'userId enrollmentNumber')
+        .populate('studentId.userId', 'firstName lastName')
+        .populate('facultyId', 'userId employeeId')
+        .populate('facultyId.userId', 'firstName lastName')
+        .sort({ examDate: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+
+    const total = await Grade.countDocuments(query);
+
+    res.json({
+        success: true,
+        grades,
+        pagination: {
+            current: parseInt(page),
+            pages: Math.ceil(total / limit),
+            total
+        }
+    });
+}));
+
+// Get all attendance records (admin view)
+router.get('/attendance', asyncHandler(async (req, res) => {
+    const { studentId, facultyId, subjectCode, date, page = 1, limit = 10 } = req.query;
+    
+    let query = {};
+    if (studentId) {
+        query.studentId = studentId;
+    }
+    if (facultyId) {
+        query.facultyId = facultyId;
+    }
+    if (subjectCode) {
+        query.subjectCode = subjectCode;
+    }
+    if (date) {
+        query.date = new Date(date);
+    }
+
+    const attendance = await Attendance.find(query)
+        .populate('studentId', 'userId enrollmentNumber')
+        .populate('studentId.userId', 'firstName lastName')
+        .populate('facultyId', 'userId employeeId')
+        .populate('facultyId.userId', 'firstName lastName')
+        .sort({ date: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit);
+
+    const total = await Attendance.countDocuments(query);
+
+    res.json({
+        success: true,
+        attendance,
+        pagination: {
+            current: parseInt(page),
+            pages: Math.ceil(total / limit),
+            total
         }
     });
 }));

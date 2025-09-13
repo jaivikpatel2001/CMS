@@ -39,7 +39,6 @@ function handleLogin(event) {
     // Get form data
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
-    const userType = document.querySelector('input[name="user-type"]:checked').value;
     
     // Validate inputs
     let isValid = true;
@@ -70,33 +69,79 @@ function handleLogin(event) {
     submitButton.textContent = 'Signing In...';
     submitButton.disabled = true;
     
-    // Simulate API call delay
-    setTimeout(() => {
-        // Check for demo credentials (in real app, this would be server-side validation)
-        if (validateCredentials(username, password, userType)) {
+    // Use real API validation - determine user type from email/username
+    try {
+        const userType = determineUserType(username);
+        const isValid = await validateCredentials(username, password, userType);
+        if (isValid) {
             login(username, userType);
         } else {
             showError('login-error', 'Invalid username or password');
             submitButton.textContent = originalText;
             submitButton.disabled = false;
         }
-    }, 1500);
+    } catch (error) {
+        showError('login-error', 'Login failed. Please try again.');
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+    }
 }
 
-// Validate credentials (demo function - replace with actual authentication)
-function validateCredentials(username, password, userType) {
-    // Demo credentials for testing
-    const validCredentials = {
-        student: { username: 'student', password: 'student123' },
-        faculty: { username: 'faculty', password: 'faculty123' },
-        admin: { username: 'admin', password: 'admin123' }
-    };
+// Determine user type from email/username
+function determineUserType(username) {
+    // Check if it's an email
+    if (username.includes('@')) {
+        if (username.includes('admin@silveroakuni.ac.in')) {
+            return 'admin';
+        } else if (username.includes('@silveroakuni.ac.in')) {
+            // Check if it's a faculty email (employee ID format)
+            if (username.match(/^\d{5}@silveroakuni\.ac\.in$/)) {
+                return 'faculty';
+            }
+            // Check if it's a student email (enrollment number format)
+            else if (username.match(/^\d{13}@silveroakuni\.ac\.in$/)) {
+                return 'student';
+            }
+        }
+    }
     
-    const credentials = validCredentials[userType];
-    return credentials && username.toLowerCase() === credentials.username && password === credentials.password;
+    // Check if it's a username
+    if (username.toLowerCase() === 'admin') {
+        return 'admin';
+    } else if (username.toLowerCase().startsWith('faculty')) {
+        return 'faculty';
+    } else if (username.toLowerCase().startsWith('student')) {
+        return 'student';
+    }
+    
+    // Default to student if can't determine
+    return 'student';
 }
 
-function login(username, userType) {
+// Validate credentials using real API
+async function validateCredentials(username, password, userType) {
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username: username,
+                password: password,
+                role: userType
+            })
+        });
+        
+        const data = await response.json();
+        return data.success;
+    } catch (error) {
+        console.error('Login error:', error);
+        return false;
+    }
+}
+
+async function login(username, userType) {
     // Get references to all pages
     const loginPage = document.getElementById('login-page');
     const studentDashboard = document.getElementById('student-dashboard');
@@ -106,51 +151,26 @@ function login(username, userType) {
     // Hide the login page and show the appropriate dashboard
     loginPage.classList.add('hidden');
     
-    if (userType === 'student') {
-        studentDashboard.classList.remove('hidden');
-        // Update welcome message with actual username
-        const welcomeElement = studentDashboard.querySelector('h2');
-        if (welcomeElement) {
-            welcomeElement.textContent = `Welcome, ${username}`;
-        }
-    } else if (userType === 'faculty') {
-        facultyDashboard.classList.remove('hidden');
-        const welcomeElement = facultyDashboard.querySelector('h2');
-        if (welcomeElement) {
-            welcomeElement.textContent = `Welcome, ${username}`;
-        }
-    } else if (userType === 'admin') {
-        adminDashboard.classList.remove('hidden');
-        const welcomeElement = adminDashboard.querySelector('h2');
-        if (welcomeElement) {
-            welcomeElement.textContent = `Welcome, ${username}`;
-        }
-    }
-    
     // Store login state
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userType', userType);
     localStorage.setItem('username', username);
+    
+    if (userType === 'student') {
+        studentDashboard.classList.remove('hidden');
+        // Load student data dynamically
+        await loadStudentData(username);
+    } else if (userType === 'faculty') {
+        facultyDashboard.classList.remove('hidden');
+        // Load faculty data dynamically
+        await loadFacultyData(username);
+    } else if (userType === 'admin') {
+        adminDashboard.classList.remove('hidden');
+        // Load admin data dynamically
+        await loadAdminData(username);
+    }
 }
 
-// Select user type with visual feedback
-function selectUserType(type) {
-    // Remove active styling from all options
-    document.querySelectorAll('[onclick^="selectUserType"]').forEach(option => {
-        option.classList.remove('border-[#8b3d4f]', 'bg-[#f0d9dd]');
-        option.classList.add('border-gray-200');
-    });
-    
-    // Add active styling to selected option
-    const selectedOption = document.querySelector(`[onclick="selectUserType('${type}')"]`);
-    if (selectedOption) {
-        selectedOption.classList.remove('border-gray-200');
-        selectedOption.classList.add('border-[#8b3d4f]', 'bg-[#f0d9dd]');
-    }
-    
-    // Check the radio button
-    document.getElementById(type).checked = true;
-}
 
 // Toggle password visibility
 function togglePasswordVisibility() {
@@ -203,13 +223,26 @@ function logout() {
     facultyDashboard.classList.add('hidden');
     adminDashboard.classList.add('hidden');
     loginPage.classList.remove('hidden'); // Show login page
+    
+    // Reset login button text
+    const loginButton = document.querySelector('#login-form button[type="submit"]');
+    if (loginButton) {
+        loginButton.textContent = 'Login';
+        loginButton.disabled = false;
+    }
+    
+    // Clear stored data
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userType');
+    localStorage.removeItem('username');
+    localStorage.removeItem('token');
 }
 
 /* 
  * This function handles the submission of a student complaint.
- * It logs the complaint details to the console and provides a simple message box.
+ * It submits the complaint to the backend API.
  */
-function submitComplaint() {
+async function submitComplaint() {
     const complaintType = document.getElementById('complaint-type').value;
     const complaintDetails = document.getElementById('complaint-details').value;
 
@@ -218,22 +251,49 @@ function submitComplaint() {
          return;
     }
 
-    // Simulate sending the complaint data to a server
-    console.log("Complaint Submitted:");
-    console.log("Type:", complaintType);
-    console.log("Details:", complaintDetails);
-    
-    showModalMessage("Your complaint has been submitted successfully!");
+    try {
+        const response = await fetch('/api/student/complaints', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            },
+            body: JSON.stringify({
+                complaintType,
+                subject: complaintType.charAt(0).toUpperCase() + complaintType.slice(1) + ' Issue',
+                description: complaintDetails,
+                priority: 'medium'
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                showModalMessage("Your complaint has been submitted successfully!");
+                // Clear the form
+                document.getElementById('complaint-type').value = '';
+                document.getElementById('complaint-details').value = '';
+                document.getElementById('complaint-word-count').textContent = '0';
+            } else {
+                showModalMessage("Error submitting complaint: " + data.message);
+            }
+        } else {
+            showModalMessage("Error submitting complaint. Please try again.");
+        }
+    } catch (error) {
+        console.error('Error submitting complaint:', error);
+        showModalMessage("Error submitting complaint. Please try again.");
+    }
 }
 
-/*
- * This function simulates the faculty viewing grades.
- * It logs the selected course to the console.
- */
-function viewGrades() {
-    const selectedCourse = document.querySelector('#faculty-dashboard select').value;
-    console.log(`Faculty is viewing grades for: ${selectedCourse}`);
-    showModalMessage(`Displaying grades for ${selectedCourse}.`);
+// Update complaint word count
+function updateComplaintWordCount() {
+    const textarea = document.getElementById('complaint-details');
+    const wordCount = document.getElementById('complaint-word-count');
+    if (textarea && wordCount) {
+        const words = textarea.value.trim().split(/\s+/).filter(word => word.length > 0);
+        wordCount.textContent = words.length;
+    }
 }
 
 /*
@@ -591,5 +651,426 @@ function clearResetPasswordErrors() {
     const successElement = document.getElementById('reset-password-success');
     if (successElement) {
         successElement.classList.add('hidden');
+    }
+}
+
+// ======================= DATA LOADING FUNCTIONS =======================
+
+// Load student data dynamically
+async function loadStudentData(username) {
+    try {
+        // Get student profile
+        const response = await fetch('/api/student/profile', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                updateStudentDashboard(data.student);
+            }
+        }
+        
+        // Load announcements
+        await loadStudentAnnouncements();
+        
+        // Load assignments
+        await loadStudentAssignments();
+        
+        // Load grades
+        await loadStudentGrades();
+        
+        // Load attendance
+        await loadStudentAttendance();
+        
+    } catch (error) {
+        console.error('Error loading student data:', error);
+    }
+}
+
+// Load faculty data dynamically
+async function loadFacultyData(username) {
+    try {
+        // Get faculty profile
+        const response = await fetch('/api/faculty/profile', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                updateFacultyDashboard(data.faculty);
+            }
+        }
+        
+        // Load announcements
+        await loadFacultyAnnouncements();
+        
+        // Load courses
+        await loadFacultyCourses();
+        
+    } catch (error) {
+        console.error('Error loading faculty data:', error);
+    }
+}
+
+// Load admin data dynamically
+async function loadAdminData(username) {
+    try {
+        // Load statistics
+        await loadAdminStatistics();
+        
+        // Load announcements
+        await loadAdminAnnouncements();
+        
+        // Load complaints
+        await loadAdminComplaints();
+        
+    } catch (error) {
+        console.error('Error loading admin data:', error);
+    }
+}
+
+// Update student dashboard with real data
+function updateStudentDashboard(student) {
+    const welcomeElement = document.querySelector('#student-dashboard h2');
+    if (welcomeElement) {
+        welcomeElement.textContent = `Welcome, ${student.userId.firstName} ${student.userId.lastName}`;
+    }
+    
+    // Update student details
+    const detailsCard = document.querySelector('#student-dashboard .bg-white:first-child');
+    if (detailsCard) {
+        const avatar = detailsCard.querySelector('.w-16.h-16');
+        if (avatar) {
+            avatar.textContent = `${student.userId.firstName[0]}${student.userId.lastName[0]}`;
+        }
+        
+        const nameElement = detailsCard.querySelector('.font-bold.text-lg');
+        if (nameElement) {
+            nameElement.textContent = `${student.userId.firstName} ${student.userId.lastName}`;
+        }
+        
+        const studentIdElement = detailsCard.querySelector('.text-sm.text-gray-600');
+        if (studentIdElement) {
+            studentIdElement.textContent = `Student ID: ${student.enrollmentNumber}`;
+        }
+        
+        const programElement = studentIdElement?.nextElementSibling;
+        if (programElement) {
+            programElement.textContent = `Program: ${student.program}`;
+        }
+        
+        const yearElement = programElement?.nextElementSibling;
+        if (yearElement) {
+            yearElement.textContent = `Year: ${student.year}`;
+        }
+        
+        const emailElement = yearElement?.nextElementSibling;
+        if (emailElement) {
+            emailElement.textContent = `Email: ${student.userId.email}`;
+        }
+    }
+}
+
+// Update faculty dashboard with real data
+function updateFacultyDashboard(faculty) {
+    const welcomeElement = document.querySelector('#faculty-dashboard h2');
+    if (welcomeElement) {
+        welcomeElement.textContent = `Welcome, ${faculty.userId.firstName} ${faculty.userId.lastName}`;
+    }
+}
+
+// Load student announcements
+async function loadStudentAnnouncements() {
+    try {
+        const response = await fetch('/api/student/announcements', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                const announcementsList = document.getElementById('student-announcements-list');
+                if (announcementsList) {
+                    announcementsList.innerHTML = '';
+                    data.announcements.forEach(announcement => {
+                        const li = document.createElement('li');
+                        li.className = 'border-l-4 border-[#8b3d4f] pl-4 py-2';
+                        li.innerHTML = `
+                            <h4 class="font-semibold text-gray-800">${announcement.title}</h4>
+                            <p class="text-sm text-gray-600">${announcement.content}</p>
+                            <p class="text-xs text-gray-500 mt-1">By: ${announcement.author.name} - ${new Date(announcement.publishDate).toLocaleDateString()}</p>
+                        `;
+                        announcementsList.appendChild(li);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading student announcements:', error);
+    }
+}
+
+// Load faculty announcements
+async function loadFacultyAnnouncements() {
+    try {
+        const response = await fetch('/api/faculty/announcements', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                const announcementsList = document.getElementById('faculty-admin-announcements');
+                if (announcementsList) {
+                    announcementsList.innerHTML = '';
+                    data.announcements.forEach(announcement => {
+                        const li = document.createElement('li');
+                        li.className = 'border-l-4 border-[#8b3d4f] pl-4 py-2';
+                        li.innerHTML = `
+                            <h4 class="font-semibold text-gray-800">${announcement.title}</h4>
+                            <p class="text-sm text-gray-600">${announcement.content}</p>
+                            <p class="text-xs text-gray-500 mt-1">By: ${announcement.author.name} - ${new Date(announcement.publishDate).toLocaleDateString()}</p>
+                        `;
+                        announcementsList.appendChild(li);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading faculty announcements:', error);
+    }
+}
+
+// Load faculty courses
+async function loadFacultyCourses() {
+    try {
+        const response = await fetch('/api/faculty/courses', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Update courses list
+                const coursesList = document.querySelector('#faculty-dashboard .bg-white:first-child ul');
+                if (coursesList) {
+                    coursesList.innerHTML = '';
+                    data.courses.forEach(course => {
+                        const li = document.createElement('li');
+                        li.textContent = `${course.subjectCode} - ${course.subjectName}`;
+                        coursesList.appendChild(li);
+                    });
+                }
+                
+                // Update course selects
+                const selects = document.querySelectorAll('#faculty-dashboard select');
+                selects.forEach(select => {
+                    select.innerHTML = '<option value="">Select a course...</option>';
+                    data.courses.forEach(course => {
+                        const option = document.createElement('option');
+                        option.value = course.subjectCode;
+                        option.textContent = `${course.subjectCode} - ${course.subjectName}`;
+                        select.appendChild(option);
+                    });
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading faculty courses:', error);
+    }
+}
+
+// Load student assignments
+async function loadStudentAssignments() {
+    try {
+        const response = await fetch('/api/student/assignments', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Update assignments list
+                const assignmentsList = document.querySelector('#student-dashboard .bg-white:nth-child(3) ul');
+                if (assignmentsList) {
+                    assignmentsList.innerHTML = '';
+                    data.assignments.forEach(assignment => {
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center py-2 border-b border-gray-200';
+                        li.innerHTML = `
+                            <div>
+                                <h4 class="font-semibold">${assignment.title}</h4>
+                                <p class="text-sm text-gray-600">${assignment.subjectName}</p>
+                                <p class="text-xs text-gray-500">Due: ${new Date(assignment.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded ${assignment.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${assignment.status}</span>
+                        `;
+                        assignmentsList.appendChild(li);
+                    });
+                }
+                
+                // Update assignment select
+                const assignmentSelect = document.getElementById('select-assignment');
+                if (assignmentSelect) {
+                    assignmentSelect.innerHTML = '<option value="">Choose an assignment...</option>';
+                    data.assignments.forEach(assignment => {
+                        const option = document.createElement('option');
+                        option.value = assignment._id;
+                        option.textContent = `${assignment.title} - ${assignment.subjectName}`;
+                        assignmentSelect.appendChild(option);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading student assignments:', error);
+    }
+}
+
+// Load student grades
+async function loadStudentGrades() {
+    try {
+        const response = await fetch('/api/student/grades', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                const gradesTable = document.querySelector('#student-dashboard .bg-white:nth-child(2) tbody');
+                if (gradesTable) {
+                    gradesTable.innerHTML = '';
+                    data.grades.forEach(grade => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${grade.subjectName}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${grade.marks.obtained}/${grade.marks.total}</td>
+                            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${grade.grade}</td>
+                        `;
+                        gradesTable.appendChild(row);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading student grades:', error);
+    }
+}
+
+// Load student attendance
+async function loadStudentAttendance() {
+    try {
+        const response = await fetch('/api/student/attendance', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                const attendanceElement = document.querySelector('#student-dashboard .progress-circle');
+                if (attendanceElement) {
+                    attendanceElement.textContent = `${data.attendancePercentage}%`;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading student attendance:', error);
+    }
+}
+
+// Load admin statistics
+async function loadAdminStatistics() {
+    try {
+        const response = await fetch('/api/admin/dashboard', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('totalStudents').textContent = data.totalStudents;
+                document.getElementById('totalFaculty').textContent = data.totalFaculty;
+                document.getElementById('activeCourses').textContent = data.activeCourses;
+                document.getElementById('totalUsers').textContent = data.totalUsers;
+                document.getElementById('totalComplaints').textContent = data.totalComplaints;
+                document.getElementById('recentStudents').textContent = data.recentStudents;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading admin statistics:', error);
+    }
+}
+
+// Load admin announcements
+async function loadAdminAnnouncements() {
+    try {
+        const response = await fetch('/api/admin/announcements', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Update announcements list if needed
+            }
+        }
+    } catch (error) {
+        console.error('Error loading admin announcements:', error);
+    }
+}
+
+// Load admin complaints
+async function loadAdminComplaints() {
+    try {
+        const response = await fetch('/api/admin/complaints', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                const complaintsList = document.querySelector('#admin-dashboard .bg-white:nth-child(4) ul');
+                if (complaintsList) {
+                    complaintsList.innerHTML = '';
+                    data.complaints.forEach(complaint => {
+                        const li = document.createElement('li');
+                        li.className = 'border-l-4 border-[#8b3d4f] pl-4 py-2';
+                        li.innerHTML = `
+                            <h4 class="font-semibold text-gray-800">${complaint.subject}</h4>
+                            <p class="text-sm text-gray-600">${complaint.description}</p>
+                            <p class="text-xs text-gray-500 mt-1">By: ${complaint.studentName} - ${new Date(complaint.submittedAt).toLocaleDateString()}</p>
+                            <span class="px-2 py-1 text-xs rounded ${complaint.status === 'resolved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${complaint.status}</span>
+                        `;
+                        complaintsList.appendChild(li);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error loading admin complaints:', error);
     }
 }

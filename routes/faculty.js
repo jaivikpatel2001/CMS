@@ -206,6 +206,99 @@ router.get('/grades/subject/:subjectCode', asyncHandler(async (req, res) => {
     });
 }));
 
+// Update grade
+router.put('/grades/:gradeId', validateRequest({
+    marks: { type: 'number', min: 0 },
+    totalMarks: { type: 'number', min: 1 },
+    examDate: { type: 'date' },
+    remarks: { maxLength: 200 },
+    status: { enum: ['published', 'draft', 'under_review'] }
+}), asyncHandler(async (req, res) => {
+    const { gradeId } = req.params;
+    const { marks, totalMarks, examDate, remarks, status } = req.body;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const grade = await Grade.findById(gradeId);
+    if (!grade) {
+        return res.status(404).json({
+            success: false,
+            message: 'Grade not found'
+        });
+    }
+
+    if (grade.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to update this grade'
+        });
+    }
+
+    // Update allowed fields
+    if (marks !== undefined) grade.marks.obtained = marks;
+    if (totalMarks !== undefined) grade.marks.total = totalMarks;
+    if (examDate !== undefined) grade.examDate = new Date(examDate);
+    if (remarks !== undefined) grade.remarks = remarks;
+    if (status !== undefined) grade.status = status;
+
+    // Recalculate percentage and grade if marks changed
+    if (marks !== undefined || totalMarks !== undefined) {
+        grade.marks.percentage = Math.round((grade.marks.obtained / grade.marks.total) * 100);
+        grade.grade = grade.calculateGrade();
+        grade.gpa = gradeToGPA(grade.grade);
+        grade.isPassed = grade.grade !== 'F';
+    }
+
+    await grade.save();
+
+    res.json({
+        success: true,
+        message: 'Grade updated successfully',
+        grade
+    });
+}));
+
+// Delete grade
+router.delete('/grades/:gradeId', asyncHandler(async (req, res) => {
+    const { gradeId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const grade = await Grade.findById(gradeId);
+    if (!grade) {
+        return res.status(404).json({
+            success: false,
+            message: 'Grade not found'
+        });
+    }
+
+    if (grade.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to delete this grade'
+        });
+    }
+
+    await Grade.findByIdAndDelete(gradeId);
+
+    res.json({
+        success: true,
+        message: 'Grade deleted successfully'
+    });
+}));
+
 // Mark attendance
 router.post('/attendance', validateRequest({
     studentId: { required: true },
@@ -310,6 +403,85 @@ router.get('/attendance/subject/:subjectCode', asyncHandler(async (req, res) => 
     res.json({
         success: true,
         attendance
+    });
+}));
+
+// Update attendance
+router.put('/attendance/:attendanceId', validateRequest({
+    status: { enum: ['present', 'absent', 'late', 'excused'] },
+    remarks: { maxLength: 200 }
+}), asyncHandler(async (req, res) => {
+    const { attendanceId } = req.params;
+    const { status, remarks } = req.body;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const attendance = await Attendance.findById(attendanceId);
+    if (!attendance) {
+        return res.status(404).json({
+            success: false,
+            message: 'Attendance record not found'
+        });
+    }
+
+    if (attendance.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to update this attendance record'
+        });
+    }
+
+    // Update allowed fields
+    if (status !== undefined) attendance.status = status;
+    if (remarks !== undefined) attendance.remarks = remarks;
+
+    await attendance.save();
+
+    res.json({
+        success: true,
+        message: 'Attendance updated successfully',
+        attendance
+    });
+}));
+
+// Delete attendance
+router.delete('/attendance/:attendanceId', asyncHandler(async (req, res) => {
+    const { attendanceId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const attendance = await Attendance.findById(attendanceId);
+    if (!attendance) {
+        return res.status(404).json({
+            success: false,
+            message: 'Attendance record not found'
+        });
+    }
+
+    if (attendance.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to delete this attendance record'
+        });
+    }
+
+    await Attendance.findByIdAndDelete(attendanceId);
+
+    res.json({
+        success: true,
+        message: 'Attendance record deleted successfully'
     });
 }));
 
@@ -450,6 +622,93 @@ router.post('/assignments/:assignmentId/grade', validateRequest({
     });
 }));
 
+// Update assignment
+router.put('/assignments/:assignmentId', validateRequest({
+    title: { minLength: 5, maxLength: 200 },
+    description: { minLength: 10, maxLength: 1000 },
+    dueDate: { type: 'date' },
+    maxMarks: { type: 'number', min: 1, max: 100 },
+    instructions: { maxLength: 500 },
+    status: { enum: ['active', 'closed', 'cancelled'] }
+}), asyncHandler(async (req, res) => {
+    const { assignmentId } = req.params;
+    const { title, description, dueDate, maxMarks, instructions, status } = req.body;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const assignment = await Assignment.findById(assignmentId);
+    if (!assignment) {
+        return res.status(404).json({
+            success: false,
+            message: 'Assignment not found'
+        });
+    }
+
+    if (assignment.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to update this assignment'
+        });
+    }
+
+    // Update allowed fields
+    if (title !== undefined) assignment.title = title;
+    if (description !== undefined) assignment.description = description;
+    if (dueDate !== undefined) assignment.dueDate = new Date(dueDate);
+    if (maxMarks !== undefined) assignment.maxMarks = maxMarks;
+    if (instructions !== undefined) assignment.instructions = instructions;
+    if (status !== undefined) assignment.status = status;
+
+    await assignment.save();
+
+    res.json({
+        success: true,
+        message: 'Assignment updated successfully',
+        assignment
+    });
+}));
+
+// Delete assignment
+router.delete('/assignments/:assignmentId', asyncHandler(async (req, res) => {
+    const { assignmentId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const assignment = await Assignment.findById(assignmentId);
+    if (!assignment) {
+        return res.status(404).json({
+            success: false,
+            message: 'Assignment not found'
+        });
+    }
+
+    if (assignment.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to delete this assignment'
+        });
+    }
+
+    await Assignment.findByIdAndDelete(assignmentId);
+
+    res.json({
+        success: true,
+        message: 'Assignment deleted successfully'
+    });
+}));
+
 // Post announcement
 router.post('/announcements', validateRequest({
     title: { required: true, minLength: 5, maxLength: 200 },
@@ -500,6 +759,28 @@ router.get('/announcements', asyncHandler(async (req, res) => {
         'author.userId': req.user._id,
         'author.role': 'faculty'
     }).sort({ publishDate: -1 });
+
+    res.json({
+        success: true,
+        announcements
+    });
+}));
+
+// Get admin announcements feed for faculty (cross-visibility)
+router.get('/announcements/feed', asyncHandler(async (req, res) => {
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    // Fetch announcements targeted to faculty (or all), optionally filtered by department
+    const announcements = await Announcement.getAnnouncementsForUser(
+        'faculty',
+        faculty.department
+    );
 
     res.json({
         success: true,
