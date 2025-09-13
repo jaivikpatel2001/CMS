@@ -1,0 +1,242 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Specific styles not easily covered by Tailwind, or for complex gradients */
+
+/* Attendance progress circle - keeping custom CSS for the conic gradient */
+.attendance .progress-circle {
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(closest-side, white 79%, transparent 80% 100%),
+                conic-gradient(#8b3d4f 92%, #e0e0e0 0); /* Updated color to match theme */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #8b3d4f; /* Updated color to match theme */
+    margin: auto;
+}
+
+/* Login form enhancements */
+#login-form input:focus {
+    box-shadow: 0 0 0 3px rgba(139, 61, 79, 0.1);
+}
+
+#login-form input:invalid {
+    border-color: #ef4444;
+}
+
+#login-form input:valid {
+    border-color: #10b981;
+}
+
+/* Smooth transitions for form elements */
+#login-form input,
+#login-form button {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Loading state for submit button */
+#login-form button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Error message animations */
+.text-red-500 {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* User type selection hover effects */
+[onclick^="selectUserType"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 61, 79, 0.15);
+}
+
+/* Password toggle button hover effect */
+#toggle-password:hover svg {
+    transform: scale(1.1);
+}
+
+/* Form validation styles */
+.form-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.form-success {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Forgot Password Page Styles */
+#forgot-password-form input:focus,
+#reset-password-form input:focus {
+    box-shadow: 0 0 0 3px rgba(139, 61, 79, 0.1);
+}
+
+#forgot-password-form input:invalid,
+#reset-password-form input:invalid {
+    border-color: #ef4444;
+}
+
+#forgot-password-form input:valid,
+#reset-password-form input:valid {
+    border-color: #10b981;
+}
+
+/* Smooth transitions for forgot password form elements */
+#forgot-password-form input,
+#forgot-password-form button,
+#reset-password-form input,
+#reset-password-form button {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Loading state for forgot password submit button */
+#forgot-password-form button:disabled,
+#reset-password-form button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Success message animations */
+.text-green-600 {
+    animation: slideInSuccess 0.3s ease-out;
+}
+
+@keyframes slideInSuccess {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Forgot password user type selection hover effects */
+[onclick^="selectForgotUserType"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 61, 79, 0.15);
+}
+
+/* Password toggle button hover effects for new password fields */
+#toggle-new-password:hover svg,
+#toggle-confirm-password:hover svg {
+    transform: scale(1.1);
+}
+
+/* Form validation styles for forgot password */
+.forgot-form-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.forgot-form-success {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Password strength indicator */
+.password-strength {
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.password-strength-weak {
+    background: #ef4444;
+    width: 25%;
+}
+
+.password-strength-fair {
+    background: #f59e0b;
+    width: 50%;
+}
+
+.password-strength-good {
+    background: #10b981;
+    width: 75%;
+}
+
+.password-strength-strong {
+    background: #059669;
+    width: 100%;
+}
+
+/* Page transition animations */
+.page-transition {
+    animation: fadeInSlide 0.5s ease-out;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 640px) {
+    #login-page .max-w-md,
+    #forgot-password-page .max-w-md,
+    #reset-password-page .max-w-md {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    #login-page h2,
+    #forgot-password-page h2,
+    #reset-password-page h2 {
+        font-size: 1.5rem;
+    }
+    
+    #login-page .grid-cols-3,
+    #forgot-password-page .grid-cols-3 {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    /* Adjust instruction boxes for mobile */
+    .bg-blue-50,
+    .bg-gray-50 {
+        padding: 0.75rem;
+    }
+    
+    .bg-blue-50 p,
+    .bg-gray-50 p {
+        font-size: 0.875rem;
+    }
+}
