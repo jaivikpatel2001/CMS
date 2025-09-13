@@ -1,0 +1,214 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# File uploads (keep structure but ignore content)
+uploads/*
+!uploads/.gitkeep
+uploads/assignments/*
+!uploads/assignments/.gitkeep
+uploads/documents/*
+!uploads/documents/.gitkeep
+uploads/profiles/*
+!uploads/profiles/.gitkeep
+uploads/misc/*
+!uploads/misc/.gitkeep
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Test files
+test-results/
+coverage/
+
+# Build outputs
+build/
+dist/
+out/
+
+# Documentation build
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Custom additions for this project
+# Keep these files but ignore their content
+!uploads/
+!uploads/assignments/
+!uploads/documents/
+!uploads/profiles/
+!uploads/misc/
+
+# Ignore specific file types that shouldn't be tracked
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+*.pid.lock
+
+# Ignore large files that shouldn't be in git
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Ignore configuration files that might contain sensitive data
+config/local.js
+config/production.js
+config/development.js
+
+# Ignore any local development files
+local/
+dev/
+development/
+
+# Ignore any generated documentation
+docs/generated/
+api-docs/
+
+# Ignore any test data
+test-data/
+sample-data/
+
+# Ignore any deployment files
+deploy/
+deployment/
+.docker/
+
+# Ignore any monitoring/logging files
+logs/
+monitoring/
+.monitoring/
+
+# Ignore any backup directories
+backup/
+backups/

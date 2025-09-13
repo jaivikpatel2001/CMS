@@ -4,6 +4,7 @@
     <title>College Management System</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- We're using Tailwind CSS for a modern, clean look, consistent with index.html -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/styles.css">
@@ -24,7 +25,7 @@
             </div>
 
             <!-- Login Form -->
-            <form id="login-form" class="space-y-6">
+            <form id="login-form" class="space-y-6" onsubmit="return false;">
                 <!-- User Type Selection -->
                 <div class="text-left">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">Login As:</label>
@@ -135,7 +136,7 @@
             </div>
 
             <!-- Forgot Password Form -->
-            <form id="forgot-password-form" class="space-y-6">
+            <form id="forgot-password-form" class="space-y-6" onsubmit="return false;">
                 <!-- User Type Selection -->
                 <div class="text-left">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">Account Type:</label>
@@ -233,7 +234,7 @@
             </div>
 
             <!-- Reset Password Form -->
-            <form id="reset-password-form" class="space-y-6">
+            <form id="reset-password-form" class="space-y-6" onsubmit="return false;">
                 <!-- New Password Field -->
                 <div class="text-left">
                     <label for="new-password" class="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
@@ -425,12 +426,10 @@
                         <label for="select-assignment" class="block text-sm font-medium text-gray-700">Submit an Assignment</label>
                         <select id="select-assignment" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm">
                             <option value="">Choose an assignment...</option>
-                            <option value="pbl-1">PBL-1(Problem Based Learning)</option>
-                            <option value="algorithms-lab">WT-Assignment 1</option>
                         </select>
                         <label for="upload-file" class="block text-sm font-medium text-gray-700">Upload file</label>
                         <input type="file" id="upload-file" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#f0d9dd] file:text-[#8b3d4f] hover:file:bg-[#e0c0c5]">
-                        <button class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Submit</button>
+                        <button onclick="submitAssignment()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Submit</button>
                     </div>
                 </div>
 
@@ -546,7 +545,10 @@
                             <option value="other">Other</option>
                         </select>
                         <label for="complaint-details" class="block text-sm font-medium text-gray-700">Complaint Details</label>
-                        <textarea id="complaint-details" placeholder="Describe your issue here..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm resize-y min-h-[80px]"></textarea>
+                        <textarea id="complaint-details" placeholder="Describe your issue here..." class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm resize-y min-h-[80px]" maxlength="750" oninput="updateComplaintWordCount()"></textarea>
+                        <div class="text-right text-xs text-gray-500 mt-1">
+                            <span id="complaint-word-count">0</span>/150 words
+                        </div>
                         <button onclick="submitComplaint()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Submit Complaint</button>
                     </div>
                 </div>
@@ -618,7 +620,7 @@
                         <option>Advanced Java Programming</option>
                         <option>Basic Of Python Programing</option>
                     </select>
-                    <button class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Create New Assignment</button>
+                    <button onclick="createNewAssignment()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Create New Assignment</button>
                 </div>
 
                 <!-- Manage Student Grades Card -->
@@ -640,7 +642,7 @@
                         <option>Advanced Java Programming (11:00 AM)</option>
                         <option>Basic Of Python Programing (01:10 PM)</option>
                     </select>
-                    <button class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Mark Attendance</button>
+                    <button onclick="markAttendance()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Mark Attendance</button>
                 </div>
                 
                 <!-- View Student Complaints Card -->
@@ -663,7 +665,7 @@
                     <h3>Announcements</h3>
                     <p class="text-sm text-gray-600 mb-4">Post new announcements</p>
                     <textarea class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm resize-y min-h-[80px] mb-4" placeholder="Type your announcement here..."></textarea>
-                    <button class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Post Announcement</button>
+                    <button onclick="postFacultyAnnouncement()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Post Announcement</button>
                 </div>
             </div>
         </main>
@@ -692,9 +694,9 @@
                     <h3 class="text-xl font-semibold text-[#8b3d4f] border-b-2 border-gray-200 pb-3 mb-4">Manage Users</h3>
                     <p class="text-sm text-gray-600 mb-4">View, add, or remove students and faculty.</p>
                     <div class="flex flex-col space-y-3">
-                        <button class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">View All Students</button>
-                        <button class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">View All Faculty</button>
-                        <button class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Add New User</button>
+                        <button onclick="viewAllStudents()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">View All Students</button>
+                        <button onclick="viewAllFaculty()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">View All Faculty</button>
+                        <button onclick="showAddUserModal()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Add New User</button>
                     </div>
                 </div>
                 <!-- College Statistics Card -->
@@ -702,10 +704,18 @@
                     <h3 class="text-xl font-semibold text-[#8b3d4f] border-b-2 border-gray-200 pb-3 mb-4">College Statistics</h3>
                     <p class="text-sm text-gray-600 mb-4">View key data about the college.</p>
                     <ul class="list-disc list-inside space-y-2 text-gray-700">
-                        <li>Total Students: <span class="font-medium">1,500</span></li>
-                        <li>Total Faculty: <span class="font-medium">120</span></li>
-                        <li>Active Courses: <span class="font-medium">50</span></li>
+                        <li>Total Students: <span id="totalStudents" class="font-medium">Loading...</span></li>
+                        <li>Total Faculty: <span id="totalFaculty" class="font-medium">Loading...</span></li>
+                        <li>Active Courses: <span id="activeCourses" class="font-medium">Loading...</span></li>
+                        <li>Total Users: <span id="totalUsers" class="font-medium">Loading...</span></li>
+                        <li>Total Complaints: <span id="totalComplaints" class="font-medium">Loading...</span></li>
+                        <li>Recent Students (30 days): <span id="recentStudents" class="font-medium">Loading...</span></li>
                     </ul>
+                    <div class="mt-4">
+                        <button onclick="refreshStatistics()" class="text-sm bg-[#8b3d4f] text-white px-3 py-1 rounded hover:bg-[#a24f63] transition-colors duration-200">
+                            Refresh Statistics
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Announcements Card -->
@@ -713,7 +723,7 @@
                     <h3 class="text-xl font-semibold text-[#8b3d4f] border-b-2 border-gray-200 pb-3 mb-4">Announcements</h3>
                     <p class="text-sm text-gray-600 mb-4">Post new announcements for all users.</p>
                     <textarea class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm resize-y min-h-[80px] mb-4" placeholder="Type your announcement here..."></textarea>
-                    <button class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Post Announcement</button>
+                    <button onclick="postAdminAnnouncement()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Post Announcement</button>
                 </div>
                 
                 <!-- View All Complaints Card -->
@@ -738,6 +748,282 @@
         </main>
     </section>
 
-    <script src="js/script.js"></script>
+    <!-- ======================= ADD USER MODAL ======================= -->
+    <div id="addUserModal" class="modal hidden">
+        <div class="modal-content">
+                <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                    <h3 class="text-xl font-semibold text-[#8b3d4f]">Add New User</h3>
+                    <button onclick="closeAddUserModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-6">
+                    <form id="addUserForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">User Type *</label>
+                            <select id="userRole" name="role" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                                <option value="">Select user type</option>
+                                <option value="student">Student</option>
+                                <option value="faculty">Faculty</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                                <input type="text" id="firstName" name="firstName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter first name">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                                <input type="text" id="lastName" name="lastName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter last name">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                            <input type="email" id="email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Select user type to see email format">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Username *</label>
+                            <input type="text" id="username" name="username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter username">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+                            <input type="password" id="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter password">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter phone number">
+                        </div>
+                        
+                        <!-- Student-specific fields -->
+                        <div id="studentFields" class="hidden space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Student ID</label>
+                                <input type="text" id="studentId" name="studentId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter student ID">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Course</label>
+                                <input type="text" id="course" name="course" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter course">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Semester</label>
+                                <select id="semester" name="semester" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                                    <option value="">Select semester</option>
+                                    <option value="1">Semester 1</option>
+                                    <option value="2">Semester 2</option>
+                                    <option value="3">Semester 3</option>
+                                    <option value="4">Semester 4</option>
+                                    <option value="5">Semester 5</option>
+                                    <option value="6">Semester 6</option>
+                                    <option value="7">Semester 7</option>
+                                    <option value="8">Semester 8</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Faculty-specific fields -->
+                        <div id="facultyFields" class="hidden space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
+                                <input type="text" id="employeeId" name="employeeId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter employee ID">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                                <input type="text" id="department" name="department" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter department">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Designation</label>
+                                <input type="text" id="designation" name="designation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter designation">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                    <button type="button" onclick="closeAddUserModal()" class="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" form="addUserForm" class="px-6 py-2 bg-[#8b3d4f] text-white rounded-md hover:bg-[#a24f63] transition-colors duration-200 font-medium">
+                        Add User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= EDIT USER MODAL ======================= -->
+    <div id="editUserModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold text-[#8b3d4f]">Edit User</h3>
+                <button onclick="closeEditUserModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <form id="editUserForm" class="space-y-4">
+                    <input type="hidden" id="editUserId" name="userId">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">User Type *</label>
+                        <select id="editUserRole" name="role" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                            <option value="">Select user type</option>
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                            <input type="text" id="editFirstName" name="firstName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter first name">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                            <input type="text" id="editLastName" name="lastName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter last name">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                        <input type="email" id="editEmail" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Select user type to see email format">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Username *</label>
+                        <input type="text" id="editUsername" name="username" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter username" readonly>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input type="tel" id="editPhone" name="phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter phone number">
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="editIsActive" name="isActive" class="rounded border-gray-300 text-[#8b3d4f] focus:ring-[#8b3d4f]">
+                            <span class="ml-2 text-sm text-gray-700">Active User</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Student-specific fields -->
+                    <div id="editStudentFields" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Student ID</label>
+                            <input type="text" id="editStudentId" name="studentId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter student ID">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Course</label>
+                            <input type="text" id="editCourse" name="course" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter course">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Semester</label>
+                            <select id="editSemester" name="semester" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                                <option value="">Select semester</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                                <option value="5">Semester 5</option>
+                                <option value="6">Semester 6</option>
+                                <option value="7">Semester 7</option>
+                                <option value="8">Semester 8</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Faculty-specific fields -->
+                    <div id="editFacultyFields" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
+                            <input type="text" id="editEmployeeId" name="employeeId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter employee ID">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                            <input type="text" id="editDepartment" name="department" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter department">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Designation</label>
+                            <input type="text" id="editDesignation" name="designation" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Enter designation">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button type="button" onclick="closeEditUserModal()" class="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                    Cancel
+                </button>
+                <button type="submit" form="editUserForm" class="px-6 py-2 bg-[#8b3d4f] text-white rounded-md hover:bg-[#a24f63] transition-colors duration-200 font-medium">
+                    Update User
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= USERS LIST MODAL ======================= -->
+    <div id="usersListModal" class="modal hidden">
+        <div class="modal-content">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="usersListTitle" class="text-xl font-semibold text-[#8b3d4f]">Users List</h3>
+                        <button onclick="closeUsersListModal()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Users will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="flex justify-end pt-4">
+                        <button onclick="closeUsersListModal()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors duration-200">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
 </body>
 </html>

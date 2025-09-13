@@ -208,6 +208,53 @@ body {
     }
 }
 
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    z-index: 1000;
+    overflow-y: scroll;
+    padding: 2rem 0;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-width: 90%;
+    width: 100%;
+    margin: auto;
+    min-height: calc(100vh - 4rem);
+    overflow-y: scroll;
+}
+
+/* Specific modal content adjustments */
+#addUserModal .modal-content {
+    max-width: 600px;
+}
+
+#editUserModal .modal-content {
+    max-width: 600px;
+    z-index: 1001; /* Higher z-index for edit modal */
+}
+
+#usersListModal .modal-content {
+    max-width: 1200px;
+}
+
+/* Ensure edit modal appears on top */
+#editUserModal {
+    z-index: 1001;
+}
+
 /* Responsive adjustments for mobile */
 @media (max-width: 640px) {
     #login-page .max-w-md,
