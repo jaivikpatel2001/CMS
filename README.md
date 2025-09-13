@@ -11,9 +11,9 @@
 
 The Silver Oak University College Management System is a complete digital solution that helps manage all aspects of college life. Think of it as a **digital campus** where:
 
-- **Students** can view their grades, submit assignments, check attendance, and communicate with faculty
-- **Faculty** can manage students, grade assignments, mark attendance, and post announcements  
-- **Administrators** can oversee everything, manage user accounts, and view college statistics
+- **Students** can view their grades, submit assignments, check attendance, submit complaints, and view announcements
+- **Faculty** can manage students, grade assignments, mark attendance, create assignments, post announcements, and handle complaints  
+- **Administrators** can oversee everything, manage user accounts, view college statistics, handle complaints, and post announcements
 
 It's like having a **smart assistant** for your college that keeps track of everything automatically!
 
@@ -23,33 +23,38 @@ It's like having a **smart assistant** for your college that keeps track of ever
 - Role-based login (Student, Faculty, Admin)
 - Secure password hashing with bcrypt
 - JWT token-based authentication
-- Password reset functionality
+- Password reset functionality via email
+- Role-specific email validation
 
 ### 🎓 Student Portal
 - View personal profile and academic details
-- Check attendance records
+- Check attendance records with percentage calculation
 - View exam schedules and results
-- Submit assignments (PDF upload)
-- View grades per subject
-- Submit complaints (max 150 words)
-- View announcements and events
-- Download academic documents
+- Submit assignments (PDF upload only)
+- View grades per subject with GPA calculation
+- Submit complaints (max 500 characters)
+- View announcements from faculty/admin
+- View timetable and class schedules
+- Access academic documents
 
 ### 👨‍🏫 Faculty Portal
-- Manage student information
-- Upload and manage assignments
+- Manage assigned students
+- Create and manage assignments
 - Mark and update student attendance
-- Add/update student grades
-- Post announcements
-- View student complaints
-- Submit event requests
+- Add/update student grades with feedback
+- Post announcements to students
+- View and respond to student complaints
+- Grade assignment submissions
+- View admin announcements
 
 ### 🛠️ Admin Portal
-- Manage faculty and admin accounts
-- Approve/reject event requests
+- Create and manage all user accounts (Students, Faculty, Admin)
+- View comprehensive college statistics
 - Post announcements for faculty
-- View all student complaints
-- College statistics dashboard
+- View and manage all student complaints
+- Monitor system usage and performance
+- User account activation/deactivation
+- Email format validation by role
 
 ## Technology Stack
 
@@ -129,80 +134,122 @@ EMAIL_PASS=your-app-password
 
 ## Default Login Credentials
 
+After running the database seeding (`npm run seed`), you can use these test accounts:
+
 ### Admin
 - Username: `admin`
 - Password: `admin123`
 
 ### Faculty
-- Username: `faculty`
+- Username: `faculty1`
 - Password: `faculty123`
 
 ### Student
-- Username: `student`
+- Username: `student1`
 - Password: `student123`
+
+> **⚠️ Important:** These are test accounts! Change the passwords after installation for security.
 
 ## API Endpoints
 
 ### Authentication
 - `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
+- `POST /api/auth/register` - User registration (Admin only)
 - `POST /api/auth/forgot-password` - Request password reset
 - `POST /api/auth/reset-password` - Reset password
+- `GET /api/auth/profile` - Get current user profile
+- `PUT /api/auth/profile` - Update user profile
+- `PUT /api/auth/change-password` - Change password
 
 ### Student Routes
 - `GET /api/student/profile` - Get student profile
-- `GET /api/student/grades` - Get student grades
-- `GET /api/student/attendance` - Get attendance records
+- `GET /api/student/grades` - Get student grades with statistics
+- `GET /api/student/attendance` - Get attendance records with summary
+- `GET /api/student/assignments` - Get assigned assignments
 - `POST /api/student/assignments/submit` - Submit assignment
 - `POST /api/student/complaints` - Submit complaint
+- `GET /api/student/complaints` - Get student complaints
+- `GET /api/student/announcements` - Get announcements
+- `GET /api/student/timetable` - Get class timetable
+- `GET /api/student/exams` - Get exam schedule
 
 ### Faculty Routes
+- `GET /api/faculty/profile` - Get faculty profile
 - `GET /api/faculty/students` - Get assigned students
+- `GET /api/faculty/students/subject/:subjectCode` - Get students by subject
 - `POST /api/faculty/grades` - Add/update grades
+- `GET /api/faculty/grades/subject/:subjectCode` - Get grades by subject
+- `PUT /api/faculty/grades/:gradeId` - Update grade
+- `DELETE /api/faculty/grades/:gradeId` - Delete grade
 - `POST /api/faculty/attendance` - Mark attendance
+- `GET /api/faculty/attendance/subject/:subjectCode` - Get attendance by subject
+- `PUT /api/faculty/attendance/:attendanceId` - Update attendance
+- `DELETE /api/faculty/attendance/:attendanceId` - Delete attendance
+- `POST /api/faculty/assignments` - Create assignment
+- `GET /api/faculty/assignments` - Get faculty assignments
+- `POST /api/faculty/assignments/:assignmentId/grade` - Grade assignment
+- `PUT /api/faculty/assignments/:assignmentId` - Update assignment
+- `DELETE /api/faculty/assignments/:assignmentId` - Delete assignment
 - `POST /api/faculty/announcements` - Post announcement
-- `GET /api/faculty/complaints` - View complaints
+- `GET /api/faculty/announcements` - Get faculty announcements
+- `GET /api/faculty/announcements/feed` - Get admin announcements
+- `GET /api/faculty/complaints` - Get student complaints
+- `PUT /api/faculty/complaints/:complaintId` - Update complaint status
 
 ### Admin Routes
-- `GET /api/admin/users` - Get all users
+- `GET /api/admin/statistics` - Get college statistics
+- `GET /api/admin/users` - Get all users with pagination
+- `GET /api/admin/users/:id` - Get user by ID
 - `POST /api/admin/users` - Create new user
 - `PUT /api/admin/users/:id` - Update user
 - `DELETE /api/admin/users/:id` - Delete user
-- `GET /api/admin/events` - Get event requests
-- `PUT /api/admin/events/:id` - Approve/reject event
+- `GET /api/admin/complaints` - Get all complaints
+- `PUT /api/admin/complaints/:id` - Update complaint status
+- `DELETE /api/admin/complaints/:id` - Delete complaint
+- `POST /api/admin/announcements` - Post announcement
+- `GET /api/admin/announcements` - Get admin announcements
+- `GET /api/admin/announcements/all` - Get all announcements
+- `PUT /api/admin/announcements/:id` - Update announcement
+- `DELETE /api/admin/announcements/:id` - Delete announcement
+- `GET /api/admin/assignments` - Get all assignments
+- `GET /api/admin/grades` - Get all grades
+- `GET /api/admin/attendance` - Get all attendance records
 
 ## File Structure
 
 ```
 college-management-system/
 ├── models/                 # MongoDB models
-│   ├── User.js
-│   ├── Student.js
-│   ├── Faculty.js
-│   ├── Admin.js
-│   ├── Assignment.js
-│   ├── Grade.js
-│   ├── Attendance.js
-│   ├── Complaint.js
-│   └── Announcement.js
+│   ├── User.js            # User authentication and basic info
+│   ├── Student.js         # Student-specific data
+│   ├── Faculty.js         # Faculty-specific data
+│   ├── Assignment.js      # Assignment management
+│   ├── Grade.js           # Grade management
+│   ├── Attendance.js      # Attendance tracking
+│   ├── Complaint.js       # Complaint system
+│   └── Announcement.js    # Announcement system
 ├── routes/                 # API routes
-│   ├── auth.js
-│   ├── student.js
-│   ├── faculty.js
-│   └── admin.js
+│   ├── auth.js            # Authentication routes
+│   ├── student.js         # Student-specific routes
+│   ├── faculty.js         # Faculty-specific routes
+│   └── admin.js           # Admin-specific routes
 ├── middleware/             # Custom middleware
-│   ├── auth.js
-│   └── upload.js
-├── controllers/            # Route controllers
-│   ├── authController.js
-│   ├── studentController.js
-│   ├── facultyController.js
-│   └── adminController.js
+│   ├── auth.js            # Authentication middleware
+│   └── upload.js          # File upload middleware
 ├── uploads/               # File uploads directory
-├── public/               # Static files
-├── server.js             # Main server file
-├── package.json
-└── README.md
+│   ├── assignments/       # Student assignment submissions
+│   ├── documents/         # Academic documents
+│   ├── profiles/          # Profile pictures
+│   └── misc/              # Other files
+├── css/                   # Stylesheets
+│   └── styles.css         # Custom CSS
+├── js/                    # JavaScript files
+│   ├── app.js             # Main application logic
+│   └── script.js          # Additional scripts
+├── server.js              # Main server file
+├── seed.js                # Database seeding script
+├── package.json           # Dependencies and scripts
+└── README.md              # This file
 ```
 
 ## Security Features

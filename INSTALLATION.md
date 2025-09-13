@@ -101,53 +101,60 @@ This guide will help you install and set up the College Management System on you
 - **Role:** Admin
 
 ### Faculty Account
-- **Username:** `faculty`
+- **Username:** `faculty1`
 - **Password:** `faculty123`
 - **Role:** Faculty
 
 ### Student Account
-- **Username:** `student`
+- **Username:** `student1`
 - **Password:** `student123`
 - **Role:** Student
+
+**Note:** These are test accounts created after running the seed script. Change passwords in production!
 
 ## 📋 Features Overview
 
 ### 🎓 Student Portal
 - **Profile Management:** View personal details, enrollment info
-- **Grades:** View grades for all subjects
+- **Grades:** View grades for all subjects with GPA calculation
 - **Attendance:** Check attendance records and percentage
-- **Assignments:** Submit assignments (PDF files)
-- **Complaints:** Submit complaints (max 150 words)
+- **Assignments:** Submit assignments (PDF files up to 5MB)
+- **Complaints:** Submit complaints (max 500 characters)
 - **Announcements:** View announcements from faculty/admin
 - **Timetable:** View class schedule
 - **Exams:** View exam schedule
+- **Documents:** Access academic documents
 
 ### 👨‍🏫 Faculty Portal
 - **Student Management:** View assigned students
-- **Grade Management:** Add/update student grades
+- **Grade Management:** Add/update student grades with GPA calculation
 - **Attendance:** Mark student attendance
 - **Assignment Management:** Create and manage assignments
 - **Complaint Handling:** View and respond to student complaints
 - **Announcements:** Post announcements to students
+- **Course Management:** Manage courses and subjects
+- **Grade Assignment Submissions:** Grade submitted assignments
 
 ### 🛠️ Admin Portal
 - **User Management:** Create/manage students, faculty, and admin accounts
 - **Complaint Management:** View and manage all complaints
 - **Announcement Management:** Post announcements for faculty
 - **Statistics:** View college statistics and reports
-- **Event Management:** Approve/reject event requests
+- **Email Validation:** Role-specific email format validation
+- **User Account Activation:** Activate/deactivate user accounts
+- **Dashboard:** Comprehensive overview of system data
 
 ## 🗄️ Database Schema
 
 ### Collections
 - **users:** User authentication and basic info
-- **students:** Student-specific data (enrollment, program, fees)
-- **faculty:** Faculty-specific data (subjects, salary, classes)
+- **students:** Student-specific data (enrollment, program, fees, subjects)
+- **faculty:** Faculty-specific data (subjects, salary, classes, specialization)
 - **assignments:** Assignment details and submissions
-- **grades:** Student grades and exam results
-- **attendance:** Attendance records
+- **grades:** Student grades and exam results with GPA calculation
+- **attendance:** Attendance records with percentage calculation
 - **complaints:** Student complaints and resolutions
-- **announcements:** System announcements
+- **announcements:** System announcements with view tracking
 
 ## 🔧 Configuration
 
@@ -157,10 +164,15 @@ PORT=3000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/college_management
 JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRES_IN=24h
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
 EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_email_password
+EMAIL_PASS=your_app_password
+EMAIL_FROM=noreply@silveroakuni.ac.in
 MAX_FILE_SIZE=5242880
-ALLOWED_FILE_TYPES=application/pdf
+UPLOAD_PATH=./uploads
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### File Uploads
@@ -175,16 +187,17 @@ ALLOWED_FILE_TYPES=application/pdf
 ### Project Structure
 ```
 college-management-system/
-├── models/                 # MongoDB models
-├── routes/                 # API routes
-├── middleware/             # Custom middleware
-├── uploads/               # File uploads
-├── public/               # Static files
-├── css/                  # Stylesheets
-├── js/                   # JavaScript files
-├── server.js             # Main server file
-├── package.json
-└── README.md
+├── models/                 # MongoDB models (User, Student, Faculty, etc.)
+├── routes/                 # API routes (auth, student, faculty, admin)
+├── middleware/             # Custom middleware (auth, upload, validation)
+├── uploads/               # File uploads (assignments, documents, profiles)
+├── css/                   # Stylesheets (styles.css)
+├── js/                    # JavaScript files (app.js, script.js)
+├── server.js              # Main server file
+├── seed.js                # Database seeding script
+├── package.json           # Dependencies and scripts
+├── index.html             # Frontend application
+└── README.md              # Project documentation
 ```
 
 ### API Endpoints
@@ -194,25 +207,66 @@ college-management-system/
 - `POST /api/auth/register` - User registration (Admin only)
 - `POST /api/auth/forgot-password` - Request password reset
 - `POST /api/auth/reset-password` - Reset password
+- `GET /api/auth/profile` - Get user profile
+- `PUT /api/auth/profile` - Update user profile
+- `PUT /api/auth/change-password` - Change password
+- `POST /api/auth/logout` - User logout
 
 #### Student Routes
 - `GET /api/student/profile` - Get student profile
 - `GET /api/student/grades` - Get student grades
 - `GET /api/student/attendance` - Get attendance records
+- `GET /api/student/assignments` - Get assignments
 - `POST /api/student/assignments/submit` - Submit assignment
 - `POST /api/student/complaints` - Submit complaint
+- `GET /api/student/complaints` - Get student complaints
+- `GET /api/student/announcements` - Get announcements
+- `POST /api/student/announcements/:id/view` - Mark announcement as viewed
+- `GET /api/student/timetable` - Get timetable
+- `GET /api/student/exams` - Get exam schedule
 
 #### Faculty Routes
+- `GET /api/faculty/profile` - Get faculty profile
 - `GET /api/faculty/students` - Get assigned students
+- `GET /api/faculty/students/subject/:subjectCode` - Get students by subject
 - `POST /api/faculty/grades` - Add/update grades
+- `GET /api/faculty/grades/subject/:subjectCode` - Get grades by subject
+- `PUT /api/faculty/grades/:gradeId` - Update grade
+- `DELETE /api/faculty/grades/:gradeId` - Delete grade
 - `POST /api/faculty/attendance` - Mark attendance
+- `GET /api/faculty/attendance/subject/:subjectCode` - Get attendance by subject
+- `PUT /api/faculty/attendance/:attendanceId` - Update attendance
+- `DELETE /api/faculty/attendance/:attendanceId` - Delete attendance
+- `POST /api/faculty/assignments` - Create assignment
+- `GET /api/faculty/assignments` - Get assignments
+- `POST /api/faculty/assignments/:assignmentId/grade` - Grade assignment
+- `PUT /api/faculty/assignments/:assignmentId` - Update assignment
+- `DELETE /api/faculty/assignments/:assignmentId` - Delete assignment
 - `POST /api/faculty/announcements` - Post announcement
+- `GET /api/faculty/announcements` - Get announcements
+- `GET /api/faculty/announcements/feed` - Get announcement feed
+- `GET /api/faculty/complaints` - Get complaints
+- `PUT /api/faculty/complaints/:complaintId` - Update complaint
 
 #### Admin Routes
+- `GET /api/admin/statistics` - Get college statistics
 - `GET /api/admin/users` - Get all users
+- `GET /api/admin/users/:id` - Get user by ID
 - `POST /api/admin/users` - Create new user
+- `PUT /api/admin/users/:id` - Update user
+- `DELETE /api/admin/users/:id` - Delete user
 - `GET /api/admin/complaints` - Get all complaints
+- `PUT /api/admin/complaints/:id` - Update complaint
+- `DELETE /api/admin/complaints/:id` - Delete complaint
 - `POST /api/admin/announcements` - Post announcement
+- `GET /api/admin/announcements` - Get announcements
+- `GET /api/admin/announcements/all` - Get all announcements
+- `PUT /api/admin/announcements/:id` - Update announcement
+- `DELETE /api/admin/announcements/:id` - Delete announcement
+- `GET /api/admin/dashboard` - Get dashboard data
+- `GET /api/admin/assignments` - Get all assignments
+- `GET /api/admin/grades` - Get all grades
+- `GET /api/admin/attendance` - Get all attendance
 
 ## 🐛 Troubleshooting
 
@@ -268,12 +322,15 @@ college-management-system/
 
 ## 🔒 Security Features
 
-- Password hashing with bcrypt
-- JWT token authentication
-- Input validation and sanitization
-- File upload restrictions
-- CORS configuration
-- Environment variable protection
+- **Password Hashing**: bcryptjs for secure password storage
+- **JWT Token Authentication**: Secure session management
+- **Input Validation**: Request validation middleware
+- **File Upload Restrictions**: Only PDF files allowed for assignments
+- **CORS Configuration**: Secure cross-origin requests
+- **Environment Variable Protection**: Sensitive data in .env files
+- **Role-Based Access Control**: Users only see what they need
+- **Email Validation**: Role-specific email format validation
+- **MongoDB Injection Protection**: Parameterized queries
 
 ## 📞 Support
 
@@ -285,9 +342,12 @@ For issues and questions:
 
 ## 🎯 Future Enhancements
 
-- Real-time notifications
-- Mobile app integration
-- Advanced reporting features
-- Email notifications
-- Calendar integration
-- Document management system
+- **Real-time Notifications**: Instant alerts for important updates
+- **Mobile App Integration**: Native mobile applications
+- **Advanced Reporting**: Detailed analytics and reports
+- **Email Notifications**: Automated email alerts
+- **Calendar Integration**: Sync with Google Calendar and Outlook
+- **Document Management**: Advanced file organization and sharing
+- **Video Integration**: Support for video assignments
+- **Multi-Language Support**: Support for multiple languages
+- **Offline Support**: Work without internet connection

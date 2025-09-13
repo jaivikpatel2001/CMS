@@ -38,8 +38,7 @@ POST /api/auth/login
 ```json
 {
   "username": "student1",
-  "password": "student123",
-  "role": "student"
+  "password": "student123"
 }
 ```
 
@@ -55,7 +54,16 @@ POST /api/auth/login
     "email": "student1@silveroakuni.ac.in",
     "role": "student",
     "firstName": "Divy",
-    "lastName": "Patel"
+    "lastName": "Patel",
+    "phone": "9876543210",
+    "lastLogin": "2024-01-15T10:30:00Z"
+  },
+  "roleData": {
+    "enrollmentNumber": "C000001",
+    "program": "Diploma in IT",
+    "year": 3,
+    "semester": 5,
+    "department": "Information Technology"
   }
 }
 ```
@@ -64,6 +72,27 @@ POST /api/auth/login
 - **Default**: 24 hours (1 day)
 - **Format**: Standard JWT expiration
 - **Auto-logout**: Frontend handles expired tokens automatically
+
+### Password Reset
+```http
+POST /api/auth/forgot-password
+```
+
+**Request Body:**
+```json
+{
+  "email": "student1@silveroakuni.ac.in",
+  "role": "student"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Password reset link sent to your email"
+}
+```
 
 ---
 
@@ -109,21 +138,29 @@ GET /api/student/grades
   "success": true,
   "grades": [
     {
+      "_id": "grade_id",
       "subjectCode": "WT",
       "subjectName": "Web Technology",
+      "examType": "final",
       "marks": {
         "obtained": 85,
-        "total": 100
+        "total": 100,
+        "percentage": 85
       },
       "grade": "A",
+      "gpa": 9,
       "semester": 5,
-      "year": 3
+      "year": 3,
+      "examDate": "2024-01-15T00:00:00Z",
+      "isPassed": true,
+      "status": "published"
     }
   ],
   "statistics": {
     "totalSubjects": 4,
-    "averageMarks": 82.5,
-    "gpa": 3.7
+    "averagePercentage": 82.5,
+    "averageGPA": 8.2,
+    "passedSubjects": 4
   }
 }
 ```
@@ -143,10 +180,17 @@ GET /api/student/attendance
   "success": true,
   "attendance": [
     {
+      "_id": "attendance_id",
       "subjectCode": "WT",
       "subjectName": "Web Technology",
-      "date": "2024-01-15",
+      "date": "2024-01-15T00:00:00Z",
       "status": "present",
+      "remarks": "On time",
+      "classTime": {
+        "start": "11:00",
+        "end": "12:40"
+      },
+      "room": "D-405/B",
       "facultyId": {
         "userId": {
           "firstName": "Vedrucha",
@@ -209,10 +253,9 @@ assignment: <PDF file>
   "success": true,
   "message": "Assignment submitted successfully",
   "submission": {
-    "assignmentId": "assignment_id",
-    "studentId": "student_id",
+    "status": "submitted",
     "submittedAt": "2024-01-15T10:30:00Z",
-    "filePath": "uploads/assignments/student_id/file.pdf"
+    "isLate": false
   }
 }
 ```
@@ -225,9 +268,10 @@ POST /api/student/complaints
 **Request Body:**
 ```json
 {
-  "complaintType": "Academics",
+  "complaintType": "academics",
   "subject": "Assignment Submission Issue",
-  "description": "Unable to submit assignment due to technical issues"
+  "description": "Unable to submit assignment due to technical issues",
+  "priority": "medium"
 }
 ```
 
@@ -237,10 +281,10 @@ POST /api/student/complaints
   "success": true,
   "message": "Complaint submitted successfully",
   "complaint": {
-    "complaintType": "Academics",
+    "id": "complaint_id",
+    "complaintType": "academics",
     "subject": "Assignment Submission Issue",
-    "description": "Unable to submit assignment due to technical issues",
-    "status": "pending",
+    "status": "submitted",
     "submittedAt": "2024-01-15T10:30:00Z"
   }
 }
@@ -323,15 +367,11 @@ POST /api/faculty/grades
 {
   "studentId": "student_id",
   "subjectCode": "WT",
-  "subjectName": "Web Technology",
-  "marks": {
-    "obtained": 85,
-    "total": 100
-  },
-  "grade": "A",
-  "comments": "Good work",
-  "semester": 5,
-  "year": 3
+  "examType": "final",
+  "marks": 85,
+  "totalMarks": 100,
+  "examDate": "2024-01-15",
+  "remarks": "Good work"
 }
 ```
 
@@ -341,14 +381,21 @@ POST /api/faculty/grades
   "success": true,
   "message": "Grade added successfully",
   "grade": {
+    "_id": "grade_id",
     "studentId": "student_id",
     "subjectCode": "WT",
+    "subjectName": "Web Technology",
+    "examType": "final",
     "marks": {
       "obtained": 85,
-      "total": 100
+      "total": 100,
+      "percentage": 85
     },
     "grade": "A",
-    "comments": "Good work"
+    "gpa": 9,
+    "examDate": "2024-01-15T00:00:00Z",
+    "remarks": "Good work",
+    "isPassed": true
   }
 }
 ```
@@ -363,15 +410,14 @@ POST /api/faculty/attendance
 {
   "studentId": "student_id",
   "subjectCode": "WT",
-  "subjectName": "Web Technology",
   "date": "2024-01-15",
   "status": "present",
-  "remarks": "On time",
   "classTime": {
-    "start": "09:00",
-    "end": "10:30"
+    "start": "11:00",
+    "end": "12:40"
   },
-  "room": "Lab-101"
+  "room": "D-405/B",
+  "remarks": "On time"
 }
 ```
 
@@ -381,11 +427,18 @@ POST /api/faculty/attendance
   "success": true,
   "message": "Attendance marked successfully",
   "attendance": {
+    "_id": "attendance_id",
     "studentId": "student_id",
     "subjectCode": "WT",
-    "date": "2024-01-15",
+    "subjectName": "Web Technology",
+    "date": "2024-01-15T00:00:00Z",
     "status": "present",
-    "remarks": "On time"
+    "remarks": "On time",
+    "classTime": {
+      "start": "11:00",
+      "end": "12:40"
+    },
+    "room": "D-405/B"
   }
 }
 ```
@@ -398,11 +451,10 @@ POST /api/faculty/assignments
 **Request Body:**
 ```json
 {
-  "title": "Web Development Project",
-  "description": "Create a responsive website",
+  "title": "PBL-1 (Problem Based Learning)",
+  "description": "Complete the web development project",
   "subjectCode": "WT",
-  "subjectName": "Web Technology",
-  "dueDate": "2024-02-15",
+  "dueDate": "2024-02-15T23:59:00Z",
   "maxMarks": 100,
   "instructions": "Submit as PDF file"
 }
@@ -414,10 +466,21 @@ POST /api/faculty/assignments
   "success": true,
   "message": "Assignment created successfully",
   "assignment": {
-    "title": "Web Development Project",
+    "_id": "assignment_id",
+    "title": "PBL-1 (Problem Based Learning)",
+    "description": "Complete the web development project",
     "subjectCode": "WT",
-    "dueDate": "2024-02-15",
-    "maxMarks": 100
+    "subjectName": "Web Technology",
+    "dueDate": "2024-02-15T23:59:00Z",
+    "maxMarks": 100,
+    "instructions": "Submit as PDF file",
+    "status": "active",
+    "assignedTo": [
+      {
+        "studentId": "student_id",
+        "enrollmentNumber": "C000001"
+      }
+    ]
   }
 }
 ```
@@ -431,8 +494,11 @@ POST /api/faculty/announcements
 ```json
 {
   "title": "Assignment Deadline Extended",
-  "message": "The assignment deadline has been extended to next week",
-  "targetAudience": "students"
+  "content": "The assignment deadline has been extended to next week",
+  "targetAudience": "students",
+  "department": "Information Technology",
+  "priority": "medium",
+  "category": "academic"
 }
 ```
 
@@ -442,10 +508,19 @@ POST /api/faculty/announcements
   "success": true,
   "message": "Announcement posted successfully",
   "announcement": {
+    "_id": "announcement_id",
     "title": "Assignment Deadline Extended",
-    "message": "The assignment deadline has been extended to next week",
-    "postedBy": "faculty_id",
-    "postedAt": "2024-01-15T10:30:00Z"
+    "content": "The assignment deadline has been extended to next week",
+    "author": {
+      "userId": "faculty_id",
+      "name": "Faculty Name",
+      "role": "faculty"
+    },
+    "targetAudience": "students",
+    "department": "Information Technology",
+    "priority": "medium",
+    "category": "academic",
+    "publishDate": "2024-01-15T10:30:00Z"
   }
 }
 ```
@@ -530,7 +605,12 @@ POST /api/admin/users
   "firstName": "New",
   "lastName": "Student",
   "role": "student",
-  "phone": "9876543210"
+  "phone": "9876543210",
+  "enrollmentNumber": "IT2024002",
+  "program": "B.Tech",
+  "year": 1,
+  "semester": 1,
+  "department": "Information Technology"
 }
 ```
 
@@ -540,11 +620,14 @@ POST /api/admin/users
   "success": true,
   "message": "User created successfully",
   "user": {
-    "id": "new_user_id",
+    "_id": "new_user_id",
     "username": "newstudent",
     "email": "newstudent@silveroakuni.ac.in",
+    "firstName": "New",
+    "lastName": "Student",
     "role": "student",
-    "isActive": true
+    "isActive": true,
+    "createdAt": "2024-01-15T10:30:00Z"
   }
 }
 ```
@@ -604,10 +687,14 @@ GET /api/admin/statistics
   "statistics": {
     "totalStudents": 150,
     "totalFaculty": 25,
-    "activeCourses": 12,
+    "totalAdmins": 3,
     "totalComplaints": 8,
     "pendingComplaints": 3,
-    "recentRegistrations": 5
+    "totalAnnouncements": 12,
+    "activeAnnouncements": 8,
+    "totalAssignments": 45,
+    "totalGrades": 1200,
+    "totalAttendanceRecords": 2500
   }
 }
 ```
@@ -654,8 +741,11 @@ POST /api/admin/announcements
 ```json
 {
   "title": "Important Notice",
-  "message": "College will be closed tomorrow for maintenance",
-  "targetAudience": "faculty"
+  "content": "College will be closed tomorrow for maintenance",
+  "targetAudience": "faculty",
+  "department": "All",
+  "priority": "high",
+  "category": "general"
 }
 ```
 
@@ -665,10 +755,19 @@ POST /api/admin/announcements
   "success": true,
   "message": "Announcement posted successfully",
   "announcement": {
+    "_id": "announcement_id",
     "title": "Important Notice",
-    "message": "College will be closed tomorrow for maintenance",
-    "postedBy": "admin_id",
-    "postedAt": "2024-01-15T10:30:00Z"
+    "content": "College will be closed tomorrow for maintenance",
+    "author": {
+      "userId": "admin_id",
+      "name": "Admin Name",
+      "role": "admin"
+    },
+    "targetAudience": "faculty",
+    "department": "All",
+    "priority": "high",
+    "category": "general",
+    "publishDate": "2024-01-15T10:30:00Z"
   }
 }
 ```
@@ -701,6 +800,8 @@ POST /api/admin/announcements
   program: String (required),
   year: Number (required, min: 1, max: 4),
   semester: Number (required, min: 1, max: 8),
+  department: String (required),
+  subjects: [String],
   fees: {
     tuition: Number,
     paid: Number,
@@ -727,10 +828,12 @@ POST /api/admin/announcements
   employeeId: String (required, unique),
   designation: String (required),
   department: String (required),
-  subjects: [String],
-  salary: Number,
-  experience: Number,
+  specialization: String,
   qualification: String,
+  experience: Number,
+  subjects: [String],
+  classes: [String],
+  salary: Number,
   joiningDate: Date
 }
 ```
@@ -742,17 +845,22 @@ POST /api/admin/announcements
   description: String,
   subjectCode: String (required),
   subjectName: String (required),
+  facultyId: ObjectId (ref: 'Faculty'),
+  assignedTo: [ObjectId] (ref: 'Student'),
   dueDate: Date (required),
   maxMarks: Number (required),
   instructions: String,
-  createdBy: ObjectId (ref: 'Faculty'),
+  attachments: [String],
   submissions: [{
     studentId: ObjectId (ref: 'Student'),
+    file: String,
+    status: String (enum: ['submitted', 'graded', 'late']),
     submittedAt: Date,
-    filePath: String,
     marks: Number,
     feedback: String
-  }]
+  }],
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
@@ -760,17 +868,25 @@ POST /api/admin/announcements
 ```javascript
 {
   studentId: ObjectId (ref: 'Student'),
+  enrollmentNumber: String (required),
   subjectCode: String (required),
   subjectName: String (required),
-  marks: {
-    obtained: Number (required),
-    total: Number (required)
-  },
-  grade: String (required),
-  comments: String,
+  facultyId: ObjectId (ref: 'Faculty'),
   semester: Number (required),
   year: Number (required),
-  createdBy: ObjectId (ref: 'Faculty')
+  examType: String (required),
+  marks: {
+    obtained: Number (required),
+    total: Number (required),
+    percentage: Number
+  },
+  grade: String (required),
+  gpa: Number,
+  remarks: String,
+  examDate: Date,
+  isPassed: Boolean,
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
@@ -801,15 +917,20 @@ POST /api/admin/announcements
 {
   studentId: ObjectId (ref: 'Student'),
   enrollmentNumber: String (required),
+  studentName: String (required),
+  department: String (required),
   complaintType: String (required),
   subject: String (required),
-  description: String (required, max: 150 words),
-  status: String (enum: ['pending', 'in_progress', 'resolved']),
+  description: String (required, max: 500 characters),
   priority: String (enum: ['low', 'medium', 'high']),
-  response: String,
-  resolvedBy: ObjectId (ref: 'Faculty'),
-  resolvedAt: Date,
-  submittedAt: Date
+  status: String (enum: ['pending', 'in_progress', 'resolved']),
+  submittedAt: Date,
+  assignedTo: ObjectId (ref: 'Faculty'),
+  resolution: String,
+  attachments: [String],
+  feedback: String,
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
@@ -817,11 +938,30 @@ POST /api/admin/announcements
 ```javascript
 {
   title: String (required),
-  message: String (required, max: 150 words),
+  content: String (required),
+  author: {
+    userId: ObjectId (ref: 'User'),
+    name: String (required),
+    role: String (required)
+  },
   targetAudience: String (enum: ['students', 'faculty', 'all']),
-  postedBy: ObjectId (ref: 'User'),
-  postedAt: Date,
-  isActive: Boolean (default: true)
+  department: String,
+  year: Number,
+  semester: Number,
+  priority: String (enum: ['low', 'medium', 'high']),
+  category: String,
+  isActive: Boolean (default: true),
+  publishDate: Date,
+  expiryDate: Date,
+  attachments: [String],
+  views: [{
+    userId: ObjectId (ref: 'User'),
+    viewedAt: Date
+  }],
+  isPinned: Boolean (default: false),
+  tags: [String],
+  createdAt: Date,
+  updatedAt: Date
 }
 ```
 
@@ -832,20 +972,24 @@ POST /api/admin/announcements
 ### Authentication
 - **JWT Tokens**: All API requests require valid JWT tokens
 - **Token Expiration**: Tokens expire after 24 hours
-- **Password Hashing**: Passwords are hashed using bcrypt
+- **Password Hashing**: Passwords are hashed using bcryptjs
 - **Role-Based Access**: Users can only access endpoints for their role
+- **Password Reset**: Email-based password reset with secure tokens
+- **Email Validation**: Role-specific email format validation (students: @silveroakuni.ac.in, faculty: @silveroakuni.ac.in, admin: @silveroakuni.ac.in)
 
 ### Input Validation
-- **Email Validation**: Role-specific email format validation
 - **File Upload Security**: Only PDF files allowed for assignments
 - **Input Sanitization**: All inputs are validated and sanitized
-- **SQL Injection Protection**: MongoDB queries are parameterized
+- **MongoDB Injection Protection**: MongoDB queries are parameterized
+- **Request Validation**: Custom middleware validates request bodies
 
 ### CORS Configuration
 ```javascript
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 ```
 
@@ -872,6 +1016,14 @@ app.use(cors({
 - `DUPLICATE_ENTRY`: Resource already exists
 - `NOT_FOUND`: Resource not found
 - `SERVER_ERROR`: Internal server error
+- `EMAIL_ALREADY_EXISTS`: Email address already registered
+- `USERNAME_ALREADY_EXISTS`: Username already taken
+- `INVALID_EMAIL_FORMAT`: Email format doesn't match role requirements
+- `FILE_UPLOAD_ERROR`: Error uploading file
+- `INVALID_FILE_TYPE`: File type not allowed
+- `ASSIGNMENT_NOT_FOUND`: Assignment doesn't exist
+- `STUDENT_NOT_FOUND`: Student doesn't exist
+- `FACULTY_NOT_FOUND`: Faculty doesn't exist
 
 ### HTTP Status Codes
 - `200`: Success
@@ -919,25 +1071,69 @@ app.use(cors({
 
 ---
 
+## 🔧 Environment Variables
+
+### Required Environment Variables
+```bash
+# Database
+MONGODB_URI=mongodb://localhost:27017/college_management
+
+# JWT Secret
+JWT_SECRET=your_jwt_secret_key_here
+
+# Email Configuration (for password reset)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+EMAIL_FROM=noreply@silveroakuni.ac.in
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# File Upload
+MAX_FILE_SIZE=5242880
+UPLOAD_PATH=./uploads
+
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:3000
+```
+
+### Optional Environment Variables
+```bash
+# Logging
+LOG_LEVEL=info
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=3600000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Token Expiration
+JWT_EXPIRES_IN=24h
+```
+
+---
+
 ## 📞 Support
 
 ### API Testing
-- **Postman Collection**: Available for download
-- **Swagger Documentation**: Interactive API documentation
 - **Test Environment**: Use test credentials for API testing
+- **Default Test Accounts**: Available after running seed script
+- **API Endpoints**: All endpoints documented with examples
 
 ### Rate Limiting
-- **Default**: 100 requests per hour per IP
-- **Authentication**: 10 login attempts per hour per IP
-- **File Upload**: 5MB maximum file size
+- **Default**: No rate limiting implemented
+- **Authentication**: Standard JWT token validation
+- **File Upload**: 5MB maximum file size for assignments
 
 ### Monitoring
-- **Logging**: All API requests are logged
-- **Error Tracking**: Detailed error logs for debugging
-- **Performance**: Response time monitoring
+- **Logging**: Basic console logging for development
+- **Error Tracking**: Standard error handling with detailed messages
+- **Performance**: Basic response time logging
 
 ---
 
 **This API documentation provides comprehensive information for integrating with the College Management System. For additional support, contact your system administrator.**
 
-*Last updated: January 2024 | Version 1.0.0*
+*Last updated: January 2025 | Version 1.0.0*

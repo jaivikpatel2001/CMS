@@ -43,11 +43,14 @@ After logging in, you'll see your personalized dashboard with:
 ### 🏠 Student Dashboard Overview
 Your dashboard shows:
 - **Personal Information**: Your name, student ID, program details
-- **Grades**: All your subject grades and GPA
+- **Grades**: All your subject grades and GPA calculation
 - **Attendance**: Your attendance percentage and records
 - **Assignments**: Pending and completed assignments
 - **Complaints**: Submit and track complaints
 - **Announcements**: Latest college news
+- **Timetable**: Today's class schedule
+- **Exams**: Upcoming exam schedule
+- **Documents**: Access to academic documents
 
 ### 📊 Viewing Your Grades
 1. **Look for the "My Grades" section** on your dashboard
@@ -77,14 +80,14 @@ Your dashboard shows:
 ### 📢 Submitting Complaints
 1. **Scroll to "Submit a New Complaint" section**
 2. **Select complaint type** (Academics, Infrastructure, Other)
-3. **Write your complaint** (maximum 150 words)
-4. **Watch the word counter** as you type
+3. **Write your complaint** (maximum 500 characters)
+4. **Watch the character counter** as you type
 5. **Click "Submit Complaint"**
 
 **Complaint Guidelines:**
 - Be specific and constructive
 - Include relevant details
-- Stay within the 150-word limit
+- Stay within the 500-character limit
 - Use appropriate language
 
 ### 📋 Viewing Timetable
@@ -110,11 +113,12 @@ Your dashboard shows:
 Your dashboard includes:
 - **My Courses**: Subjects you teach
 - **Student Management**: View assigned students
-- **Grade Management**: Add and update grades
+- **Grade Management**: Add and update grades with GPA calculation
 - **Attendance Management**: Mark student attendance
 - **Assignment Management**: Create and manage assignments
 - **Complaint Handling**: View student complaints
 - **Announcements**: Post messages to students
+- **Grade Assignment Submissions**: Grade submitted assignments
 
 ### 👥 Managing Students
 1. **Go to "My Courses" section**
@@ -175,7 +179,9 @@ Your dashboard provides:
 - **College Statistics**: Real-time data and reports
 - **Announcement Management**: Post messages for faculty
 - **Complaint Management**: Oversee all complaints
-- **System Monitoring**: Track usage and performance
+- **Email Validation**: Role-specific email format validation
+- **User Account Activation**: Activate/deactivate user accounts
+- **Dashboard**: Comprehensive overview of system data
 
 ### 👥 Managing Users
 #### Creating New Users
@@ -204,9 +210,12 @@ Your dashboard provides:
 1. **View "College Statistics" section**
 2. **See real-time data**:
    - Total students and faculty
-   - Active courses
-   - Total complaints
-   - Recent registrations
+   - Total administrators
+   - Total complaints and resolutions
+   - Total announcements and active announcements
+   - Total assignments created
+   - Total grades recorded
+   - Total attendance records
 3. **Click "Refresh Statistics"** for latest data
 
 ### 📢 Managing Announcements
@@ -230,7 +239,7 @@ Your dashboard provides:
 
 ### 🔐 Login Issues
 **Q: I forgot my password. What should I do?**
-A: Contact your administrator to reset your password. They can create a new temporary password for you.
+A: Use the "Forgot Password" feature on the login page. Enter your email address and check your email for reset instructions. If you don't receive an email, contact your administrator.
 
 **Q: I can't log in even with correct credentials.**
 A: Check that you're selecting the correct role (Student, Faculty, or Admin). If the problem persists, contact your administrator.
@@ -348,4 +357,4 @@ If you're still having issues:
 
 **Need more help? Contact your system administrator or IT support team.**
 
-*Last updated: January 2024 | Version 1.0.0*
+*Last updated: January 2025 | Version 1.0.0*

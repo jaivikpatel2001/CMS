@@ -74,12 +74,15 @@ This guide provides comprehensive information about every feature in the College
 - **Overall GPA**: Calculate your grade point average
 - **Grade History**: View grades from previous semesters
 - **Grade Breakdown**: See how grades are calculated
+- **Percentage Calculation**: Automatic percentage calculation
+- **Pass/Fail Status**: Clear indication of pass/fail status
 
 **How to use**:
 1. Log in as a student
 2. Look for "My Grades" section on dashboard
 3. View all subjects with marks and grades
-4. Check your overall performance
+4. Check your overall performance and GPA
+5. Review pass/fail status for each subject
 
 ### 📝 Assignment Submission
 **What it does**: Allows you to submit homework and projects online
@@ -89,18 +92,22 @@ This guide provides comprehensive information about every feature in the College
 - **Due Date Tracking**: See when assignments are due
 - **Submission Status**: Track which assignments you've submitted
 - **Late Submission Detection**: Automatically marks late submissions
+- **Assignment Instructions**: View detailed assignment requirements
+- **Max Marks Display**: See total marks for each assignment
 
 **How to use**:
 1. Go to "Assignments" section
 2. Select an assignment from the dropdown
 3. Choose a PDF file from your computer
 4. Click "Submit" and wait for confirmation
+5. Check submission status and feedback
 
 **Important Notes**:
 - Only PDF files are accepted
 - You can only submit once per assignment
 - Late submissions are automatically marked
 - Contact faculty if you need to resubmit
+- Check for faculty feedback after grading
 
 ### 📅 Attendance Tracking
 **What it does**: Shows your class attendance records and percentage
@@ -110,26 +117,31 @@ This guide provides comprehensive information about every feature in the College
 - **Detailed Records**: See attendance for each subject
 - **Date Tracking**: View attendance by date
 - **Status Information**: See if you were present, absent, or late
+- **Class Time**: View class start and end times
+- **Room Information**: See which room the class was in
+- **Faculty Information**: Know which faculty marked attendance
 
 **How to use**:
 1. Find "Attendance" section on your dashboard
 2. View your overall attendance percentage
 3. Check detailed records for each subject
 4. Monitor your attendance trends
+5. Review class details and faculty information
 
 ### 📢 Complaint System
 **What it does**: Allows you to report issues and concerns
 
 **Features**:
 - **Complaint Types**: Academics, Infrastructure, Other
-- **Word Limit**: Maximum 150 words with live counter
+- **Character Limit**: Maximum 500 characters with live counter
 - **Status Tracking**: See if your complaint is being addressed
 - **Priority Levels**: System automatically assigns priority
+- **Department Assignment**: Complaints are assigned to relevant departments
 
 **How to use**:
 1. Scroll to "Submit a New Complaint" section
 2. Select complaint type from dropdown
-3. Write your complaint (watch the word counter)
+3. Write your complaint (watch the character counter)
 4. Click "Submit Complaint"
 5. Check back for updates
 
@@ -196,6 +208,10 @@ This guide provides comprehensive information about every feature in the College
 - **Grade Updates**: Modify grades when needed
 - **Grade Publishing**: Control when students see grades
 - **Grade Comments**: Add feedback for students
+- **Exam Type Selection**: Choose from different exam types
+- **Percentage Calculation**: Automatic percentage calculation
+- **GPA Calculation**: Automatic GPA calculation
+- **Pass/Fail Status**: Automatic pass/fail determination
 
 **How to use**:
 1. Navigate to "Manage Student Grades"
@@ -209,6 +225,7 @@ This guide provides comprehensive information about every feature in the College
 - Enter marks out of 100
 - Add constructive comments
 - Publish grades when ready for students
+- Select appropriate exam type
 
 ### 📅 Attendance Management
 **What it does**: Helps you mark and track student attendance
@@ -218,6 +235,9 @@ This guide provides comprehensive information about every feature in the College
 - **Student Status**: Mark Present, Absent, or Late
 - **Remarks**: Add notes about attendance
 - **Attendance Reports**: View attendance statistics
+- **Class Time**: Set start and end times for classes
+- **Room Information**: Specify which room the class is in
+- **Date Selection**: Choose the date for attendance
 
 **How to use**:
 1. Go to "Manage Attendance" section
@@ -225,6 +245,12 @@ This guide provides comprehensive information about every feature in the College
 3. Mark each student's attendance status
 4. Add remarks if necessary
 5. Save attendance records
+
+**Attendance Guidelines**:
+- Mark attendance promptly after class
+- Use appropriate status (Present, Absent, Late)
+- Add remarks for special circumstances
+- Keep accurate records for student tracking
 
 ### 📝 Assignment Management
 **What it does**: Allows you to create and manage assignments
@@ -234,6 +260,10 @@ This guide provides comprehensive information about every feature in the College
 - **Due Date Setting**: Specify submission deadlines
 - **Instructions**: Provide detailed assignment instructions
 - **Submission Tracking**: See who has submitted
+- **Max Marks**: Set maximum marks for assignments
+- **Student Assignment**: Assign to specific students
+- **File Attachments**: Add supporting documents
+- **Grade Assignment**: Grade submitted assignments
 
 **How to use**:
 1. Find "Manage Assignments" section
@@ -242,6 +272,13 @@ This guide provides comprehensive information about every feature in the College
 4. Fill in assignment details
 5. Save the assignment
 
+**Assignment Guidelines**:
+- Provide clear instructions
+- Set realistic due dates
+- Specify maximum marks
+- Assign to appropriate students
+- Grade submissions promptly
+
 ### 📢 Announcement System
 **What it does**: Lets you communicate with students
 
@@ -249,12 +286,22 @@ This guide provides comprehensive information about every feature in the College
 - **Message Posting**: Send announcements to students
 - **Message History**: See previous announcements
 - **Target Audience**: Reach all students or specific groups
+- **Department Targeting**: Send to specific departments
+- **Priority Levels**: Set announcement priority
+- **Categories**: Organize announcements by type
+- **View Tracking**: See who has read announcements
 
 **How to use**:
 1. Scroll to "Announcements" section
 2. Type your message
 3. Keep it clear and concise
 4. Click "Post Announcement"
+
+**Announcement Guidelines**:
+- Keep messages clear and concise
+- Use appropriate priority levels
+- Target relevant audiences
+- Use categories for organization
 
 ### 📋 Complaint Handling
 **What it does**: Helps you respond to student complaints
@@ -264,12 +311,21 @@ This guide provides comprehensive information about every feature in the College
 - **Response System**: Reply to student concerns
 - **Status Updates**: Mark complaints as resolved
 - **Priority Management**: Handle urgent complaints first
+- **Resolution Tracking**: Track complaint resolution progress
+- **Feedback System**: Provide feedback to students
 
 **How to use**:
 1. View "Student Complaints" section
 2. Read complaint details carefully
 3. Respond appropriately to students
 4. Escalate serious issues to administration
+
+**Complaint Handling Guidelines**:
+- Respond promptly to complaints
+- Provide constructive feedback
+- Update status regularly
+- Escalate serious issues
+- Maintain professional communication
 
 ---
 
@@ -296,15 +352,24 @@ This guide provides comprehensive information about every feature in the College
 - **Faculty**: 5-7 digit number + @silveroakuni.ac.in
 - **Admin**: admin + @silveroakuni.ac.in
 
+**User Management Features**:
+- **Account Activation**: Activate or deactivate user accounts
+- **Role Assignment**: Assign and change user roles
+- **Profile Management**: Update user profiles and information
+- **Bulk Operations**: Manage multiple users at once
+
 ### 📊 College Statistics
 **What it does**: Provides real-time data about the college
 
 **Features**:
 - **Student Count**: Total number of students
 - **Faculty Count**: Total number of faculty
-- **Course Statistics**: Active courses and enrollments
+- **Admin Count**: Total number of administrators
 - **Complaint Tracking**: Number of complaints and resolutions
-- **Recent Activity**: New registrations and updates
+- **Announcement Statistics**: Total and active announcements
+- **Assignment Statistics**: Total assignments created
+- **Grade Statistics**: Total grades recorded
+- **Attendance Statistics**: Total attendance records
 
 **How to use**:
 1. View "College Statistics" section
@@ -320,12 +385,21 @@ This guide provides comprehensive information about every feature in the College
 - **Important Updates**: Share critical information
 - **Policy Changes**: Communicate new policies
 - **Event Notifications**: Inform about college events
+- **Priority Levels**: Set announcement priority
+- **Categories**: Organize announcements by type
+- **View Tracking**: See who has read announcements
 
 **How to use**:
 1. Go to "Announcements" section
 2. Type your message for faculty
 3. Make it clear and important
 4. Click "Post Announcement"
+
+**Announcement Guidelines**:
+- Keep messages clear and important
+- Use appropriate priority levels
+- Target relevant audiences
+- Use categories for organization
 
 ### 📋 Complaint Management
 **What it does**: Oversee all student complaints
@@ -335,12 +409,22 @@ This guide provides comprehensive information about every feature in the College
 - **Status Tracking**: Monitor complaint resolution
 - **Priority Assignment**: Set complaint priorities
 - **Resolution Management**: Track how complaints are resolved
+- **Faculty Assignment**: Assign complaints to faculty
+- **Resolution Tracking**: Monitor resolution progress
+- **Feedback System**: Provide feedback to students
 
 **How to use**:
 1. View "All Complaints" section
 2. Read complaint details
 3. Take appropriate action
 4. Track resolution progress
+
+**Complaint Management Guidelines**:
+- Review complaints promptly
+- Assign appropriate priorities
+- Track resolution progress
+- Provide feedback to students
+- Maintain records for reporting
 
 ---
 
@@ -387,8 +471,11 @@ This guide provides comprehensive information about every feature in the College
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 - **Styling**: Tailwind CSS for modern design
 - **Backend**: Node.js with Express.js
-- **Database**: MongoDB with Mongoose
+- **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JWT tokens for security
+- **File Upload**: Multer for handling file uploads
+- **Email**: Nodemailer for password reset functionality
+- **Password Hashing**: bcryptjs for secure password storage
 
 ### 📱 Responsive Design
 **What it does**: Works perfectly on any device
@@ -412,11 +499,15 @@ This guide provides comprehensive information about every feature in the College
 **What it does**: Protects your data and privacy
 
 **Features**:
-- **Password Hashing**: Secure password storage
-- **Session Security**: Safe user sessions
+- **Password Hashing**: Secure password storage using bcryptjs
+- **Session Security**: Safe user sessions with JWT tokens
 - **Input Validation**: Check all user inputs
-- **SQL Injection Protection**: Prevent database attacks
+- **MongoDB Injection Protection**: Prevent database attacks
 - **XSS Protection**: Block malicious scripts
+- **Role-Based Access Control**: Users only see what they need
+- **Email Validation**: Role-specific email format validation
+- **File Upload Security**: Only PDF files allowed for assignments
+- **CORS Configuration**: Secure cross-origin requests
 
 ---
 
@@ -478,4 +569,4 @@ This guide provides comprehensive information about every feature in the College
 
 **This system is designed to make college management easier, more efficient, and more organized for everyone involved!**
 
-*Last updated: January 2024 | Version 1.0.0*
+*Last updated: January 2025 | Version 1.0.0*
