@@ -6,6 +6,9 @@ body {
 
 /* Specific styles not easily covered by Tailwind, or for complex gradients */
 
+.rounded-lg,.shadow-md{
+    overflow-x: scroll;
+}
 /* Attendance progress circle - keeping custom CSS for the conic gradient */
 .attendance .progress-circle {
     width: 100px;

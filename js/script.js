@@ -134,7 +134,16 @@ async function validateCredentials(username, password, userType) {
         });
         
         const data = await response.json();
-        return data.success;
+        if (data.success) {
+            // Store authentication token and user data
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            if (data.roleData) {
+                localStorage.setItem('roleData', JSON.stringify(data.roleData));
+            }
+            return true;
+        }
+        return false;
     } catch (error) {
         console.error('Login error:', error);
         return false;
@@ -236,6 +245,8 @@ function logout() {
     localStorage.removeItem('userType');
     localStorage.removeItem('username');
     localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('roleData');
 }
 
 /* 
@@ -739,40 +750,49 @@ async function loadAdminData(username) {
 function updateStudentDashboard(student) {
     const welcomeElement = document.querySelector('#student-dashboard h2');
     if (welcomeElement) {
-        welcomeElement.textContent = `Welcome, ${student.userId.firstName} ${student.userId.lastName}`;
+        if (student && student.userId) {
+            // Use student data from API
+            welcomeElement.textContent = `Welcome, ${student.userId.firstName} ${student.userId.lastName}`;
+        } else {
+            // Fallback to stored user data from localStorage
+            const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (storedUser && storedUser.firstName) {
+                welcomeElement.textContent = `Welcome, ${storedUser.firstName} ${storedUser.lastName || ''}`.trim();
+            } else {
+                // Final fallback - just show Welcome
+                welcomeElement.textContent = 'Welcome';
+            }
+        }
     }
     
     // Update student details
     const detailsCard = document.querySelector('#student-dashboard .bg-white:first-child');
-    if (detailsCard) {
+    if (detailsCard && student) {
+        // Update avatar with initials
         const avatar = detailsCard.querySelector('.w-16.h-16');
-        if (avatar) {
-            avatar.textContent = `${student.userId.firstName[0]}${student.userId.lastName[0]}`;
+        if (avatar && student.userId) {
+            const firstName = student.userId.firstName || '';
+            const lastName = student.userId.lastName || '';
+            avatar.textContent = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
         }
         
+        // Update name
         const nameElement = detailsCard.querySelector('.font-bold.text-lg');
-        if (nameElement) {
+        if (nameElement && student.userId) {
             nameElement.textContent = `${student.userId.firstName} ${student.userId.lastName}`;
         }
         
-        const studentIdElement = detailsCard.querySelector('.text-sm.text-gray-600');
-        if (studentIdElement) {
-            studentIdElement.textContent = `Student ID: ${student.enrollmentNumber}`;
-        }
-        
-        const programElement = studentIdElement?.nextElementSibling;
-        if (programElement) {
-            programElement.textContent = `Program: ${student.program}`;
-        }
-        
-        const yearElement = programElement?.nextElementSibling;
-        if (yearElement) {
-            yearElement.textContent = `Year: ${student.year}`;
-        }
-        
-        const emailElement = yearElement?.nextElementSibling;
-        if (emailElement) {
-            emailElement.textContent = `Email: ${student.userId.email}`;
+        // Update student details - find all text elements and update them
+        const textElements = detailsCard.querySelectorAll('.text-sm.text-gray-600');
+        if (textElements.length >= 4) {
+            // Student ID
+            textElements[0].textContent = `Student ID: ${student.enrollmentNumber || '—'}`;
+            // Program
+            textElements[1].textContent = `Program: ${student.program || '—'}`;
+            // Year
+            textElements[2].textContent = `Year: ${student.year || '—'}`;
+            // Email
+            textElements[3].textContent = `Email: ${student.userId?.email || '—'}`;
         }
     }
 }
@@ -781,7 +801,19 @@ function updateStudentDashboard(student) {
 function updateFacultyDashboard(faculty) {
     const welcomeElement = document.querySelector('#faculty-dashboard h2');
     if (welcomeElement) {
-        welcomeElement.textContent = `Welcome, ${faculty.userId.firstName} ${faculty.userId.lastName}`;
+        if (faculty && faculty.userId) {
+            // Use faculty data from API
+            welcomeElement.textContent = `Welcome, ${faculty.userId.firstName} ${faculty.userId.lastName}`;
+        } else {
+            // Fallback to stored user data from localStorage
+            const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (storedUser && storedUser.firstName) {
+                welcomeElement.textContent = `Welcome, ${storedUser.firstName} ${storedUser.lastName || ''}`.trim();
+            } else {
+                // Final fallback - just show Welcome
+                welcomeElement.textContent = 'Welcome';
+            }
+        }
     }
 }
 

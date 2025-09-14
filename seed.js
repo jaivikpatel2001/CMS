@@ -4,6 +4,8 @@ require('dotenv').config();
 
 // Import models
 const User = require('./models/User');
+const Faculty = require('./models/Faculty');
+const Student = require('./models/Student');
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management', {
@@ -29,6 +31,9 @@ async function seedDatabase() {
         // Create users
         const users = await createUsers();
         
+        // Create role-specific records
+        await createRoleSpecificRecords(users);
+        
         console.log('✅ Database seeding completed successfully!');
         console.log('\n📊 Summary:');
         console.log(`- Users: ${users.length}`);
@@ -47,6 +52,8 @@ async function seedDatabase() {
 async function clearDatabase() {
     console.log('🧹 Clearing existing data...');
     await User.deleteMany({});
+    await Faculty.deleteMany({});
+    await Student.deleteMany({});
 }
 
 async function createUsers() {
@@ -95,5 +102,122 @@ async function createUsers() {
     }
     
     return createdUsers;
+}
+
+async function createRoleSpecificRecords(users) {
+    console.log('👨‍🏫 Creating role-specific records...');
+    
+    for (const user of users) {
+        if (user.role === 'faculty') {
+            const faculty = new Faculty({
+                userId: user._id,
+                employeeId: 'F001',
+                department: 'Information Technology',
+                designation: 'Lecturer',
+                specialization: 'Computer Science',
+                qualification: 'M.Tech',
+                experience: 5,
+                subjects: [
+                    {
+                        subjectCode: 'AJP',
+                        subjectName: 'Advanced Java Programming',
+                        semester: 5,
+                        year: 3,
+                        credits: 4
+                    },
+                    {
+                        subjectCode: 'BPP',
+                        subjectName: 'Basic Of Python Programming',
+                        semester: 5,
+                        year: 3,
+                        credits: 3
+                    }
+                ],
+                classes: [
+                    {
+                        subjectCode: 'AJP',
+                        day: 'Monday',
+                        startTime: '11:00',
+                        endTime: '12:40',
+                        room: 'D-405/B'
+                    },
+                    {
+                        subjectCode: 'BPP',
+                        day: 'Tuesday',
+                        startTime: '01:10',
+                        endTime: '02:50',
+                        room: 'D-405/B'
+                    }
+                ],
+                salary: {
+                    basic: 50000,
+                    allowances: 10000,
+                    total: 60000
+                },
+                joiningDate: new Date('2020-01-01'),
+                isActive: true
+            });
+            await faculty.save();
+            console.log(`✅ Created faculty record for ${user.firstName} ${user.lastName}`);
+        } else if (user.role === 'student') {
+            const student = new Student({
+                userId: user._id,
+                enrollmentNumber: 'C000001',
+                program: 'Diploma in IT',
+                year: 3,
+                semester: 5,
+                department: 'Information Technology',
+                subjects: [
+                    {
+                        subjectCode: 'AJP',
+                        subjectName: 'Advanced Java Programming',
+                        facultyId: null, // Will be updated after faculty is created
+                        semester: 5,
+                        year: 3,
+                        credits: 4
+                    },
+                    {
+                        subjectCode: 'BPP',
+                        subjectName: 'Basic Of Python Programming',
+                        facultyId: null, // Will be updated after faculty is created
+                        semester: 5,
+                        year: 3,
+                        credits: 3
+                    }
+                ],
+                fees: {
+                    semesterFees: 20000,
+                    status: 'paid',
+                    nextPaymentDue: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                },
+                address: {
+                    street: '123 Main Street',
+                    city: 'Ahmedabad',
+                    state: 'Gujarat',
+                    pincode: '380001',
+                    country: 'India'
+                },
+                emergencyContact: {
+                    name: 'Emergency Contact',
+                    relationship: 'Parent',
+                    phone: '9876543210'
+                },
+                isActive: true
+            });
+            await student.save();
+            console.log(`✅ Created student record for ${user.firstName} ${user.lastName}`);
+        }
+    }
+    
+    // Update student records with faculty IDs
+    const faculty = await Faculty.findOne({ employeeId: 'F001' });
+    if (faculty) {
+        await Student.updateMany(
+            { 'subjects.subjectCode': { $in: ['AJP', 'BPP'] } },
+            { $set: { 'subjects.$[elem].facultyId': faculty._id } },
+            { arrayFilters: [{ 'elem.subjectCode': { $in: ['AJP', 'BPP'] } }] }
+        );
+        console.log('✅ Updated student records with faculty assignments');
+    }
 }
 

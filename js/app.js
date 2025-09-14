@@ -683,7 +683,27 @@ function showDashboard(userType) {
     const dashboard = document.getElementById(dashboardId);
     if (dashboard) {
         dashboard.classList.remove('hidden');
+        
+        // Immediately update welcome message with stored user data
+        updateWelcomeMessageImmediately(userType);
+        
         loadDashboardData(userType);
+    }
+}
+
+// Immediately update welcome message with stored user data
+function updateWelcomeMessageImmediately(userType) {
+    const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (storedUser && storedUser.firstName) {
+        const dashboardId = `${userType}-dashboard`;
+        const welcomeElement = document.querySelector(`#${dashboardId} h2`);
+        if (welcomeElement) {
+            if (userType === 'admin') {
+                welcomeElement.textContent = `Welcome, Admin`;
+            } else {
+                welcomeElement.textContent = `Welcome, ${storedUser.firstName} ${storedUser.lastName || ''}`.trim();
+            }
+        }
     }
 }
 
@@ -827,7 +847,18 @@ function updateStudentProfile(student) {
         // Update welcome header as well
         const welcomeElement = document.querySelector('#student-dashboard h2');
         if (welcomeElement) {
-            welcomeElement.textContent = `Welcome, ${student.userId.firstName}`;
+            if (student && student.userId) {
+                welcomeElement.textContent = `Welcome, ${student.userId.firstName}`;
+            } else {
+                // Fallback to stored user data from localStorage
+                const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                if (storedUser && storedUser.firstName) {
+                    welcomeElement.textContent = `Welcome, ${storedUser.firstName}`;
+                } else {
+                    // Final fallback - just show Welcome
+                    welcomeElement.textContent = 'Welcome';
+                }
+            }
         }
     }
 }
@@ -909,8 +940,20 @@ async function loadFacultyDashboard() {
 
 function updateFacultyProfile(faculty) {
     const welcomeElement = document.querySelector('#faculty-dashboard h2');
-    if (welcomeElement && faculty) {
-        welcomeElement.textContent = `Welcome, ${faculty.userId.firstName} ${faculty.userId.lastName}`;
+    if (welcomeElement) {
+        if (faculty && faculty.userId) {
+            // Use faculty data from API
+            welcomeElement.textContent = `Welcome, ${faculty.userId.firstName} ${faculty.userId.lastName}`;
+        } else {
+            // Fallback to stored user data from localStorage
+            const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (storedUser && storedUser.firstName) {
+                welcomeElement.textContent = `Welcome, ${storedUser.firstName} ${storedUser.lastName || ''}`.trim();
+            } else {
+                // Final fallback - just show Welcome
+                welcomeElement.textContent = 'Welcome';
+            }
+        }
     }
 }
 
