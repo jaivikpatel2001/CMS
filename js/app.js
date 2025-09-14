@@ -537,17 +537,44 @@ function initializeForms() {
 // API Helper Functions
 async function apiRequest(endpoint, options = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
+    
+    // Get token from either storage location
+    let token = authToken;
+    if (!token) {
+        token = localStorage.getItem('authToken') || localStorage.getItem('token');
+    }
+    
     const config = {
         headers: {
             'Content-Type': 'application/json',
-            ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+            ...(token && { 'Authorization': `Bearer ${token}` })
         },
         ...options
     };
     
+    // Ensure Authorization header is properly set
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     // Debug logging
     console.log('API Request:', url);
-    console.log('Auth Token:', authToken ? 'Present' : 'Missing');
+    console.log('Auth Token:', token ? 'Present' : 'Missing');
+    console.log('Token value:', token ? token.substring(0, 20) + '...' : 'None');
+    console.log('Full Authorization header:', config.headers.Authorization);
+    console.log('Request config:', config);
+    
+    // Decode JWT token to check if it's valid
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            console.log('JWT Payload:', payload);
+            console.log('Token expires at:', new Date(payload.exp * 1000));
+            console.log('Token is expired:', payload.exp < Math.floor(Date.now() / 1000));
+        } catch (e) {
+            console.error('Error decoding JWT:', e);
+        }
+    }
     
     try {
         const response = await fetch(url, config);
@@ -2922,7 +2949,12 @@ async function deleteUser(userId, userName) {
 
 // Check authentication status
 function checkAuthStatus() {
-    const token = localStorage.getItem('authToken');
+    // Check both possible token storage locations
+    let token = localStorage.getItem('authToken');
+    if (!token) {
+        token = localStorage.getItem('token');
+    }
+    
     const userType = localStorage.getItem('userType');
     
     if (!token || !userType) {
@@ -3024,4 +3056,277 @@ function refreshStatistics() {
     
     // Reload statistics
     loadStatistics();
+}
+
+// ======================= PROFILE FUNCTIONALITY =======================
+
+// Show profile modal and load user data
+async function showProfile() {
+    const modal = document.getElementById('profileModal');
+    const profileContent = document.getElementById('profileContent');
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    
+    // Show loading state
+    profileContent.innerHTML = `
+        <div class="flex items-center justify-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8b3d4f]"></div>
+            <span class="ml-2 text-gray-600">Loading profile...</span>
+        </div>
+    `;
+    
+    try {
+        // Check authentication status first
+        console.log('LocalStorage check:', {
+            authToken: localStorage.getItem('authToken'),
+            token: localStorage.getItem('token'),
+            userType: localStorage.getItem('userType'),
+            currentUser: localStorage.getItem('currentUser')
+        });
+        
+        if (!checkAuthStatus()) {
+            showProfileError('Please log in to view your profile');
+            return;
+        }
+        
+        // Fetch user profile data using the existing apiRequest helper with cache busting
+        const data = await apiRequest('/auth/profile', {
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
+        
+        console.log('Profile API Response:', data);
+        
+        if (data && data.success) {
+            displayProfileData(data.user, data.roleData);
+        } else {
+            console.error('Profile API failed:', data);
+            
+            // Fallback: Try to display cached user data
+            const cachedUser = localStorage.getItem('currentUser');
+            if (cachedUser) {
+                console.log('Using cached user data as fallback');
+                const user = JSON.parse(cachedUser);
+                displayProfileData(user, {});
+            } else {
+                showProfileError('Failed to load profile data');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        
+        // Fallback: Try to display cached user data even if API fails
+        const cachedUser = localStorage.getItem('currentUser');
+        if (cachedUser) {
+            console.log('API failed, using cached user data as fallback');
+            const user = JSON.parse(cachedUser);
+            displayProfileData(user, {});
+        } else {
+            showProfileError('Error loading profile data');
+        }
+    }
+}
+
+// Display profile data in the modal
+function displayProfileData(user, roleData) {
+    const profileContent = document.getElementById('profileContent');
+    
+    // Get user type from localStorage or user role
+    const userType = localStorage.getItem('userType') || user.role;
+    
+    console.log('Displaying profile for:', {
+        user: user,
+        roleData: roleData,
+        userType: userType
+    });
+    
+    // Create profile content based on user type
+    let profileHTML = `
+        <div class="text-center mb-6">
+            <div class="w-24 h-24 bg-[#8b3d4f] text-white flex justify-center items-center text-3xl rounded-full mx-auto mb-4 font-bold">
+                ${user.firstName[0]}${user.lastName[0]}
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">${user.firstName} ${user.lastName}</h2>
+            <p class="text-gray-600 capitalize">${user.role}</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-[#8b3d4f] border-b-2 border-gray-200 pb-2">Basic Information</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Username:</span>
+                        <span class="text-gray-900">${user.username}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Email:</span>
+                        <span class="text-gray-900">${user.email}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Phone:</span>
+                        <span class="text-gray-900">${user.phone || 'Not provided'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Last Login:</span>
+                        <span class="text-gray-900">${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Member Since:</span>
+                        <span class="text-gray-900">${new Date(user.createdAt).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="space-y-4">
+                <h3 class="text-lg font-semibold text-[#8b3d4f] border-b-2 border-gray-200 pb-2">Role-Specific Information</h3>
+                <div class="space-y-3">
+    `;
+    
+    // Add role-specific information
+    if (userType === 'student' && roleData) {
+        profileHTML += `
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Student ID:</span>
+                        <span class="text-gray-900">${roleData.enrollmentNumber || 'Not assigned'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Program:</span>
+                        <span class="text-gray-900">${roleData.program || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Year:</span>
+                        <span class="text-gray-900">${roleData.year || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Semester:</span>
+                        <span class="text-gray-900">${roleData.semester || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Department:</span>
+                        <span class="text-gray-900">${roleData.department || 'Not specified'}</span>
+                    </div>
+        `;
+    } else if (userType === 'faculty' && roleData) {
+        profileHTML += `
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Employee ID:</span>
+                        <span class="text-gray-900">${roleData.employeeId || 'Not assigned'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Department:</span>
+                        <span class="text-gray-900">${roleData.department || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Designation:</span>
+                        <span class="text-gray-900">${roleData.designation || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Specialization:</span>
+                        <span class="text-gray-900">${roleData.specialization || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Qualification:</span>
+                        <span class="text-gray-900">${roleData.qualification || 'Not specified'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Experience:</span>
+                        <span class="text-gray-900">${roleData.experience || 0} years</span>
+                    </div>
+        `;
+    } else if (userType === 'admin') {
+        profileHTML += `
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Role:</span>
+                        <span class="text-gray-900">System Administrator</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium text-gray-700">Access Level:</span>
+                        <span class="text-gray-900">Full System Access</span>
+                    </div>
+        `;
+    } else {
+        profileHTML += `
+                    <div class="text-gray-500 italic">No additional information available</div>
+        `;
+    }
+    
+    profileHTML += `
+                </div>
+            </div>
+        </div>
+    `;
+    
+    profileContent.innerHTML = profileHTML;
+}
+
+// Show profile error
+function showProfileError(message) {
+    const profileContent = document.getElementById('profileContent');
+    profileContent.innerHTML = `
+        <div class="text-center">
+            <div class="text-red-500 mb-4">
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">Error Loading Profile</h3>
+            <p class="text-gray-600">${message}</p>
+            <button onclick="showProfile()" class="mt-4 px-4 py-2 bg-[#8b3d4f] text-white rounded-md hover:bg-[#a24f63] transition-colors duration-200">
+                Try Again
+            </button>
+        </div>
+    `;
+}
+
+// Close profile modal
+function closeProfileModal() {
+    const modal = document.getElementById('profileModal');
+    modal.classList.add('hidden');
+}
+
+// Test function to verify token and display cached data
+function testProfileData() {
+    console.log('=== PROFILE DATA TEST ===');
+    console.log('AuthToken:', localStorage.getItem('authToken'));
+    console.log('CurrentUser:', localStorage.getItem('currentUser'));
+    console.log('UserType:', localStorage.getItem('userType'));
+    
+    const cachedUser = localStorage.getItem('currentUser');
+    if (cachedUser) {
+        const user = JSON.parse(cachedUser);
+        console.log('Parsed User:', user);
+        displayProfileData(user, {});
+    }
+}
+
+// Test direct fetch to profile API
+async function testDirectProfileAPI() {
+    const token = localStorage.getItem('authToken');
+    console.log('=== DIRECT API TEST ===');
+    console.log('Token:', token);
+    
+    try {
+        const response = await fetch('http://localhost:3000/api/auth/profile', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            displayProfileData(data.user, data.roleData);
+        }
+    } catch (error) {
+        console.error('Direct API test error:', error);
+    }
 }
