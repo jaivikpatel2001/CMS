@@ -123,6 +123,333 @@ Silver Oak University Project/
 
 ---
 
+## 📊 Project Variables & Data Storage
+
+This section provides a comprehensive overview of all variables used throughout the project, categorized by their purpose and scope.
+
+### **Environment Variables**
+These are configuration settings that can be changed without modifying code:
+
+| Variable | Purpose | Default Value | Example |
+|----------|---------|---------------|---------|
+| `MONGODB_URI` | Database connection string | `mongodb://localhost:27017/college_management` | `mongodb://localhost:27017/college_management` |
+| `PORT` | Server port number | `3000` | `3000` |
+| `JWT_SECRET` | Secret key for authentication tokens | Required | `your-secret-key-here` |
+| `JWT_EXPIRES_IN` | Token expiration time | `1d` | `1d`, `24h`, `3600s` |
+| `EMAIL_USER` | Email service username | Required for email features | `your-email@gmail.com` |
+| `EMAIL_PASS` | Email service password | Required for email features | `your-app-password` |
+| `NODE_ENV` | Application environment | `development` | `development`, `production` |
+| `MAX_FILE_SIZE` | Maximum file upload size | `5242880` (5MB) | `10485760` (10MB) |
+
+### **Server Configuration Variables**
+Core server setup and middleware configuration:
+
+| Variable | Purpose | Value |
+|----------|---------|-------|
+| `app` | Express application instance | Express app object |
+| `PORT` | Server listening port | `process.env.PORT \|\| 3000` |
+| `cors()` | Cross-origin resource sharing | Enabled for all origins |
+| `express.json()` | JSON body parser | Parses incoming JSON requests |
+| `express.urlencoded()` | URL-encoded body parser | Extended: true |
+| `express.static()` | Static file serving | Serves files from root directory |
+
+### **Database Models & Schema Variables**
+
+#### **User Model Variables**
+| Field | Type | Purpose | Validation |
+|-------|------|---------|------------|
+| `username` | String | Unique login identifier | 3-50 characters, unique |
+| `email` | String | User's email address | Valid email format, unique |
+| `password` | String | Encrypted password | Minimum 6 characters |
+| `role` | String | User type | `student`, `faculty`, `admin` |
+| `firstName` | String | User's first name | 2-50 characters |
+| `lastName` | String | User's last name | 2-50 characters |
+| `phone` | String | Contact number | 10-digit number |
+| `isActive` | Boolean | Account status | Default: true |
+| `lastLogin` | Date | Last login timestamp | Automatic |
+| `resetPasswordToken` | String | Password reset token | Temporary |
+| `resetPasswordExpires` | Date | Token expiration | 1 hour from creation |
+
+#### **Student Model Variables**
+| Field | Type | Purpose | Validation |
+|-------|------|---------|------------|
+| `userId` | ObjectId | Reference to User model | Required, unique |
+| `enrollmentNumber` | String | Student ID | Required, unique, uppercase |
+| `program` | String | Course/program name | Required |
+| `year` | Number | Academic year | 1-4 |
+| `semester` | Number | Current semester | 1-8 |
+| `department` | String | Department name | Required |
+| `subjects` | Array | Enrolled subjects | Subject objects with codes |
+| `fees` | Object | Fee information | Status, amounts, dates |
+| `emergencyContact` | Object | Emergency contact details | Name, relationship, phone |
+| `address` | Object | Student address | Street, city, state, pincode |
+
+#### **Faculty Model Variables**
+| Field | Type | Purpose | Validation |
+|-------|------|---------|------------|
+| `userId` | ObjectId | Reference to User model | Required, unique |
+| `employeeId` | String | Faculty ID | Required, unique, uppercase |
+| `department` | String | Department name | Required |
+| `designation` | String | Job title | Professor, Lecturer, etc. |
+| `specialization` | String | Subject expertise | Required |
+| `qualification` | String | Educational background | Required |
+| `experience` | Number | Years of experience | Minimum 0 |
+| `subjects` | Array | Teaching subjects | Subject objects with schedules |
+| `classes` | Array | Class schedules | Day, time, room details |
+| `salary` | Object | Salary information | Basic, allowances, total |
+| `joiningDate` | Date | Employment start date | Required |
+
+#### **Assignment Model Variables**
+| Field | Type | Purpose | Validation |
+|-------|------|---------|------------|
+| `title` | String | Assignment title | 5-200 characters |
+| `description` | String | Assignment details | 10-1000 characters |
+| `subjectCode` | String | Subject identifier | Required, uppercase |
+| `subjectName` | String | Subject name | Required |
+| `facultyId` | ObjectId | Faculty reference | Required |
+| `assignedTo` | Array | Student assignments | Student IDs and enrollment numbers |
+| `dueDate` | Date | Submission deadline | Required |
+| `maxMarks` | Number | Maximum possible marks | 1-100 |
+| `instructions` | String | Additional instructions | Max 500 characters |
+| `attachments` | Array | Assignment files | File objects with metadata |
+| `submissions` | Array | Student submissions | Submission objects with status |
+| `status` | String | Assignment status | `active`, `closed`, `cancelled` |
+
+#### **Grade Model Variables**
+| Field | Type | Purpose | Validation |
+|-------|------|---------|------------|
+| `studentId` | ObjectId | Student reference | Required |
+| `enrollmentNumber` | String | Student ID | Required |
+| `subjectCode` | String | Subject identifier | Required |
+| `subjectName` | String | Subject name | Required |
+| `facultyId` | ObjectId | Faculty reference | Required |
+| `semester` | Number | Academic semester | 1-8 |
+| `year` | Number | Academic year | 1-4 |
+| `examType` | String | Type of examination | midterm, final, assignment, etc. |
+| `marks` | Object | Mark details | Obtained, total, percentage |
+| `grade` | String | Letter grade | A+, A, B+, B, C+, C, D, F |
+| `gpa` | Number | Grade point average | 0-10 |
+| `remarks` | String | Additional comments | Max 200 characters |
+| `examDate` | Date | Examination date | Required |
+| `isPassed` | Boolean | Pass/fail status | Calculated from grade |
+| `status` | String | Grade status | `published`, `draft`, `under_review` |
+
+#### **Attendance Model Variables**
+| Field | Type | Purpose | Validation |
+|-------|------|---------|------------|
+| `studentId` | ObjectId | Student reference | Required |
+| `enrollmentNumber` | String | Student ID | Required |
+| `subjectCode` | String | Subject identifier | Required |
+| `subjectName` | String | Subject name | Required |
+| `facultyId` | ObjectId | Faculty reference | Required |
+| `semester` | Number | Academic semester | 1-8 |
+| `year` | Number | Academic year | 1-4 |
+| `date` | Date | Attendance date | Required |
+| `status` | String | Attendance status | `present`, `absent`, `late`, `excused` |
+| `remarks` | String | Additional notes | Max 200 characters |
+| `markedBy` | ObjectId | Faculty who marked | Required |
+| `markedAt` | Date | Marking timestamp | Automatic |
+| `classTime` | Object | Class timing | Start and end times |
+| `room` | String | Classroom location | Required |
+
+#### **Complaint Model Variables**
+| Field | Type | Purpose | Validation |
+|-------|------|---------|------------|
+| `studentId` | ObjectId | Student reference | Required |
+| `enrollmentNumber` | String | Student ID | Required |
+| `studentName` | String | Student's full name | Required |
+| `department` | String | Department name | Required |
+| `complaintType` | String | Type of complaint | academics, infrastructure, etc. |
+| `subject` | String | Complaint title | 5-100 characters |
+| `description` | String | Detailed description | 10-500 characters |
+| `priority` | String | Priority level | `low`, `medium`, `high`, `urgent` |
+| `status` | String | Complaint status | submitted, under_review, resolved, etc. |
+| `submittedAt` | Date | Submission timestamp | Automatic |
+| `assignedTo` | Object | Assignment details | Faculty/admin assignment |
+| `resolution` | Object | Resolution details | Description, resolver, date |
+| `attachments` | Array | Supporting documents | File objects |
+| `feedback` | Object | Student feedback | Rating and comments |
+| `isAnonymous` | Boolean | Anonymous submission | Default: false |
+| `followUpRequired` | Boolean | Follow-up needed | Default: false |
+
+#### **Announcement Model Variables**
+| Field | Type | Purpose | Validation |
+|-------|------|---------|------------|
+| `title` | String | Announcement title | Max 200 characters |
+| `content` | String | Announcement content | Max 1000 characters |
+| `author` | Object | Author information | User ID, name, role |
+| `targetAudience` | String | Target audience | all, students, faculty, admin, etc. |
+| `department` | String | Department filter | Optional |
+| `year` | Number | Year filter | 1-4 |
+| `semester` | Number | Semester filter | 1-8 |
+| `priority` | String | Priority level | `low`, `medium`, `high`, `urgent` |
+| `category` | String | Announcement category | general, academic, exam, etc. |
+| `isActive` | Boolean | Active status | Default: true |
+| `publishDate` | Date | Publication date | Automatic |
+| `expiryDate` | Date | Expiration date | Calculated based on priority |
+| `attachments` | Array | File attachments | File objects with metadata |
+| `views` | Array | View tracking | User IDs and timestamps |
+| `isPinned` | Boolean | Pinned status | Default: false |
+| `tags` | Array | Search tags | String array |
+
+### **Frontend JavaScript Variables**
+
+#### **Global Application Variables**
+| Variable | Type | Purpose | Scope |
+|----------|------|---------|-------|
+| `currentUser` | Object | Currently logged-in user | Global |
+| `authToken` | String | JWT authentication token | Global |
+| `API_BASE_URL` | String | Backend API endpoint | Global |
+| `loginForm` | Element | Login form element | DOM |
+| `forgotPasswordForm` | Element | Password reset form | DOM |
+| `resetPasswordForm` | Element | New password form | DOM |
+
+#### **Form Validation Variables**
+| Variable | Type | Purpose | Usage |
+|----------|------|---------|-------|
+| `username` | String | User input username | Login validation |
+| `password` | String | User input password | Login validation |
+| `email` | String | User input email | Registration/forgot password |
+| `userType` | String | Selected user role | Role-based validation |
+| `firstName` | String | User's first name | Registration form |
+| `lastName` | String | User's last name | Registration form |
+| `phone` | String | User's phone number | Registration form |
+| `role` | String | User role selection | Registration form |
+
+#### **Dashboard State Variables**
+| Variable | Type | Purpose | Scope |
+|----------|------|---------|-------|
+| `loginPage` | Element | Login page container | Dashboard switching |
+| `studentDashboard` | Element | Student dashboard container | Dashboard switching |
+| `facultyDashboard` | Element | Faculty dashboard container | Dashboard switching |
+| `adminDashboard` | Element | Admin dashboard container | Dashboard switching |
+| `isLoggedIn` | String | Login status | localStorage |
+| `userType` | String | Current user type | localStorage |
+| `username` | String | Current username | localStorage |
+| `token` | String | Auth token | localStorage |
+| `currentUser` | String | User data JSON | localStorage |
+| `roleData` | String | Role-specific data JSON | localStorage |
+
+#### **Assignment Submission Variables**
+| Variable | Type | Purpose | Usage |
+|----------|------|---------|-------|
+| `assignmentId` | String | Assignment identifier | Submission process |
+| `file` | File | Uploaded assignment file | File handling |
+| `submission` | Object | Submission data | Status tracking |
+| `isLate` | Boolean | Late submission flag | Status calculation |
+| `status` | String | Submission status | submitted, late, graded |
+
+#### **Complaint Variables**
+| Variable | Type | Purpose | Usage |
+|----------|------|---------|-------|
+| `complaintType` | String | Type of complaint | Form submission |
+| `complaintDetails` | String | Complaint description | Form submission |
+| `subject` | String | Complaint subject | Form submission |
+| `description` | String | Detailed description | Form submission |
+| `priority` | String | Priority level | Form submission |
+
+#### **Password Management Variables**
+| Variable | Type | Purpose | Usage |
+|----------|------|---------|-------|
+| `newPassword` | String | New password input | Password reset |
+| `confirmPassword` | String | Password confirmation | Password reset |
+| `currentPassword` | String | Current password | Password change |
+| `passwordStrength` | Object | Strength calculation | Password validation |
+| `strengthIndicator` | Element | Visual strength meter | UI feedback |
+
+### **Middleware Variables**
+
+#### **Authentication Middleware**
+| Variable | Type | Purpose | Usage |
+|----------|------|---------|-------|
+| `authHeader` | String | Authorization header | Token extraction |
+| `token` | String | JWT token | Token verification |
+| `decoded` | Object | Decoded token payload | User identification |
+| `user` | Object | User object | Request context |
+
+#### **File Upload Variables**
+| Variable | Type | Purpose | Usage |
+|----------|------|---------|-------|
+| `uploadsDir` | String | Upload directory path | File storage |
+| `uploadPath` | String | Specific upload path | File organization |
+| `uniqueSuffix` | String | Unique file identifier | File naming |
+| `extension` | String | File extension | File naming |
+| `filename` | String | Generated filename | File naming |
+| `allowedTypes` | Object | Permitted file types | File validation |
+| `fileType` | String | MIME type | File validation |
+| `fileExtension` | String | File extension | File validation |
+
+### **API Response Variables**
+
+#### **Standard Response Format**
+| Variable | Type | Purpose | Usage |
+|----------|------|---------|-------|
+| `success` | Boolean | Operation status | All API responses |
+| `message` | String | Response message | All API responses |
+| `data` | Object/Array | Response data | Successful operations |
+| `error` | String | Error message | Failed operations |
+| `errors` | Array | Validation errors | Form validation |
+| `pagination` | Object | Pagination info | List responses |
+
+#### **Statistics Variables**
+| Variable | Type | Purpose | Usage |
+|----------|------|---------|-------|
+| `totalStudents` | Number | Total student count | Admin dashboard |
+| `totalFaculty` | Number | Total faculty count | Admin dashboard |
+| `activeCourses` | Number | Active course count | Admin dashboard |
+| `totalUsers` | Number | Total user count | Admin dashboard |
+| `totalComplaints` | Number | Total complaint count | Admin dashboard |
+| `recentStudents` | Number | Recent student registrations | Admin dashboard |
+| `recentFaculty` | Number | Recent faculty registrations | Admin dashboard |
+| `pendingComplaints` | Number | Pending complaint count | Admin dashboard |
+| `recentAnnouncements` | Number | Recent announcement count | Admin dashboard |
+| `activeAssignments` | Number | Active assignment count | Admin dashboard |
+
+### **Configuration Constants**
+
+#### **Email Configuration**
+| Variable | Type | Purpose | Value |
+|----------|------|---------|-------|
+| `service` | String | Email service provider | `gmail` |
+| `auth.user` | String | Email username | `process.env.EMAIL_USER` |
+| `auth.pass` | String | Email password | `process.env.EMAIL_PASS` |
+
+#### **File Upload Limits**
+| Variable | Type | Purpose | Value |
+|----------|------|---------|-------|
+| `fileSize` | Number | Maximum file size | 5MB default |
+| `files` | Number | Maximum files per request | 5 default |
+| `assignmentFileSize` | Number | Assignment file limit | 10MB |
+| `documentFileSize` | Number | Document file limit | 20MB |
+| `profileFileSize` | Number | Profile picture limit | 2MB |
+
+#### **Validation Constants**
+| Variable | Type | Purpose | Value |
+|----------|------|---------|-------|
+| `minUsernameLength` | Number | Minimum username length | 3 |
+| `maxUsernameLength` | Number | Maximum username length | 50 |
+| `minPasswordLength` | Number | Minimum password length | 6 |
+| `minNameLength` | Number | Minimum name length | 2 |
+| `maxNameLength` | Number | Maximum name length | 50 |
+| `phonePattern` | RegExp | Phone number pattern | `/^[0-9]{10}$/` |
+| `emailPattern` | RegExp | Email pattern | `/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/` |
+
+### **Database Index Variables**
+These variables optimize database queries for better performance:
+
+| Index | Fields | Purpose |
+|-------|--------|---------|
+| `userIndex` | `username`, `email` | Fast user lookup |
+| `studentIndex` | `enrollmentNumber`, `userId`, `department` | Student queries |
+| `facultyIndex` | `employeeId`, `userId`, `department` | Faculty queries |
+| `assignmentIndex` | `facultyId`, `subjectCode`, `dueDate` | Assignment queries |
+| `gradeIndex` | `studentId`, `subjectCode`, `semester` | Grade queries |
+| `attendanceIndex` | `studentId`, `subjectCode`, `date` | Attendance queries |
+| `complaintIndex` | `studentId`, `status`, `submittedAt` | Complaint queries |
+| `announcementIndex` | `publishDate`, `targetAudience`, `priority` | Announcement queries |
+
+---
+
 ## 🎯 Key Features Explained Simply
 
 ### **For Students:**
