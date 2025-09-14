@@ -8,28 +8,6 @@ let currentUser = null;
 let authToken = null;
 const API_BASE_URL = 'http://localhost:3000/api';
 
-// Initialize the application when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-});
-
-// Initialize the application
-function initializeApp() {
-    // Clean URL parameters to prevent credential exposure
-    cleanUrlParameters();
-    
-    // Check authentication status
-    if (checkAuthStatus()) {
-        const userType = localStorage.getItem('userType');
-        showDashboard(userType);
-        // Ensure forms on dashboards are bound as well (e.g., Add/Edit User)
-        initializeForms();
-        
-        // Load statistics if user is admin
-        if (userType === 'admin') {
-            loadStatistics();
-        }
-
 // ---- Form Validation Helpers ----
 function setFieldError(input, message) {
     if (!input) return;
@@ -184,6 +162,28 @@ function updateEditUserSubmitState(form) {
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
     }
 }
+
+// Initialize the application when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+});
+
+// Initialize the application
+function initializeApp() {
+    // Clean URL parameters to prevent credential exposure
+    cleanUrlParameters();
+
+    // Check authentication status
+    if (checkAuthStatus()) {
+        const userType = localStorage.getItem('userType');
+        showDashboard(userType);
+        // Ensure forms on dashboards are bound as well (e.g., Add/Edit User)
+        initializeForms();
+
+        // Load statistics if user is admin
+        if (userType === 'admin') {
+            loadStatistics();
+        }
     } else {
         // Initialize forms for login page
         initializeForms();
@@ -327,6 +327,28 @@ function getEmailValidationMessage(role) {
             return 'Must start with "admin" followed by @silveroakuni.ac.in (e.g., admin@silveroakuni.ac.in)';
         default:
             return 'Please select a user type first';
+    }
+}
+
+function showEmailValidation(emailInput, role) {
+    if (!emailInput || !role) return;
+    
+    const email = emailInput.value.trim();
+    
+    // Clear previous validation state
+    clearFieldError(emailInput);
+    
+    if (email === '') {
+        // Don't show error for empty field, just clear any existing error
+        return;
+    }
+    
+    // Validate email based on role
+    const isValid = validateEmailByRole(email, role);
+    
+    if (!isValid) {
+        const message = getEmailValidationMessage(role);
+        setFieldError(emailInput, message);
     }
 }
 
@@ -2650,7 +2672,13 @@ async function handleAddUser(event) {
         formData.employeeId = (form.querySelector('#employeeId') && form.querySelector('#employeeId').value ? form.querySelector('#employeeId').value.trim() : '');
         formData.department = (form.querySelector('#department') && form.querySelector('#department').value ? form.querySelector('#department').value.trim() : '');
         formData.designation = (form.querySelector('#designation') && form.querySelector('#designation').value ? form.querySelector('#designation').value.trim() : '');
+        formData.specialization = (form.querySelector('#specialization') && form.querySelector('#specialization').value ? form.querySelector('#specialization').value.trim() : '');
+        formData.qualification = (form.querySelector('#qualification') && form.querySelector('#qualification').value ? form.querySelector('#qualification').value.trim() : '');
+        formData.experience = (form.querySelector('#experience') && form.querySelector('#experience').value ? Number(form.querySelector('#experience').value) : 0);
     }
+    
+    // Debug: Log the form data being sent
+    console.log('Form data being sent:', formData);
     
     // Validated above; continue
     
@@ -2727,9 +2755,15 @@ function showEditUserModal(user, roleData = {}) {
         const emp = document.getElementById('editEmployeeId');
         const dept = document.getElementById('editDepartment');
         const desig = document.getElementById('editDesignation');
+        const spec = document.getElementById('editSpecialization');
+        const qual = document.getElementById('editQualification');
+        const exp = document.getElementById('editExperience');
         if (emp) emp.value = roleData.employeeId || '';
         if (dept) dept.value = roleData.department || '';
         if (desig) desig.value = roleData.designation || '';
+        if (spec) spec.value = roleData.specialization || '';
+        if (qual) qual.value = roleData.qualification || '';
+        if (exp) exp.value = roleData.experience || 0;
     } else if (user.role === 'student' && roleData) {
         const sid = document.getElementById('editStudentId');
         const course = document.getElementById('editCourse');
@@ -2815,12 +2849,15 @@ async function handleEditUser(event) {
         formData.employeeId = document.getElementById('editEmployeeId').value.trim();
         formData.department = document.getElementById('editDepartment').value.trim();
         formData.designation = document.getElementById('editDesignation').value.trim();
+        formData.specialization = document.getElementById('editSpecialization').value.trim();
+        formData.qualification = document.getElementById('editQualification').value.trim();
+        formData.experience = Number(document.getElementById('editExperience').value) || 0;
     }
     
     const userId = document.getElementById('editUserId').value;
     
     // Show loading state
-    const submitButton = event.target.querySelector('button[type="submit"]');
+    const submitButton = document.querySelector('button[form="editUserForm"]');
     const originalText = submitButton.textContent;
     submitButton.textContent = 'Updating...';
     submitButton.disabled = true;

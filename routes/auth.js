@@ -153,7 +153,12 @@ router.post('/register', authenticateToken, authorizeRole('admin'), validateRequ
             specialization: 'Computer Science',
             qualification: 'M.Tech',
             experience: 0,
-            joiningDate: new Date()
+            joiningDate: new Date(),
+            salary: {
+                basic: 50000,
+                allowances: 10000,
+                total: 60000
+            }
         });
         await faculty.save();
     }

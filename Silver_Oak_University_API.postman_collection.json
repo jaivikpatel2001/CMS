@@ -1,0 +1,1158 @@
+{
+	"info": {
+		"name": "Silver Oak University - College Management System API",
+		"description": "Complete API collection for Silver Oak University College Management System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Register User (Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"student1\",\n  \"email\": \"1234567890123@silveroakuni.ac.in\",\n  \"password\": \"password123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"role\": \"student\",\n  \"phone\": \"9876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@silveroakuni.ac.in\",\n  \"role\": \"admin\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/forgot-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "forgot-password"]
+						}
+					}
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"reset_token_here\",\n  \"password\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/reset-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "reset-password"]
+						}
+					}
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "profile"]
+						}
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Updated Name\",\n  \"lastName\": \"Updated Last\",\n  \"phone\": \"9876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "profile"]
+						}
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"oldpassword\",\n  \"newPassword\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/change-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "change-password"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "logout"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Routes",
+			"item": [
+				{
+					"name": "Get Statistics",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "statistics"]
+						}
+					}
+				},
+				{
+					"name": "Get Dashboard",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "dashboard"]
+						}
+					}
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/users?role=student&page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users"],
+							"query": [
+								{
+									"key": "role",
+									"value": "student"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/users/:userId",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users", ":userId"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "USER_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"faculty1\",\n  \"email\": \"12345@silveroakuni.ac.in\",\n  \"password\": \"password123\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"role\": \"faculty\",\n  \"phone\": \"9876543210\",\n  \"employeeId\": \"F12345\",\n  \"department\": \"Information Technology\",\n  \"designation\": \"Assistant Professor\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users"]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Updated Name\",\n  \"lastName\": \"Updated Last\",\n  \"email\": \"updated@silveroakuni.ac.in\",\n  \"phone\": \"9876543210\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/users/:userId",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users", ":userId"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "USER_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{baseUrl}}/admin/users/:userId",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users", ":userId"],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "USER_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Complaints",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/complaints?status=submitted&page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "complaints"],
+							"query": [
+								{
+									"key": "status",
+									"value": "submitted"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Complaint Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"resolved\",\n  \"resolution\": \"Issue has been resolved\",\n  \"actionTaken\": \"Fixed the problem\",\n  \"assignedTo\": \"Admin\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/complaints/:complaintId",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "complaints", ":complaintId"],
+							"variable": [
+								{
+									"key": "complaintId",
+									"value": "COMPLAINT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Complaint",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{baseUrl}}/admin/complaints/:complaintId",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "complaints", ":complaintId"],
+							"variable": [
+								{
+									"key": "complaintId",
+									"value": "COMPLAINT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Post Announcement",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Important Notice\",\n  \"content\": \"This is an important announcement for all students\",\n  \"targetAudience\": \"all\",\n  \"priority\": \"high\",\n  \"category\": \"academic\",\n  \"isPinned\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/announcements",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "announcements"]
+						}
+					}
+				},
+				{
+					"name": "Get Admin Announcements",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/announcements",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "announcements"]
+						}
+					}
+				},
+				{
+					"name": "Get All Announcements",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/announcements/all?targetAudience=all&page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "announcements", "all"],
+							"query": [
+								{
+									"key": "targetAudience",
+									"value": "all"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Announcement",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Title\",\n  \"content\": \"Updated content\",\n  \"priority\": \"medium\",\n  \"isActive\": true,\n  \"isPinned\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/announcements/:announcementId",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "announcements", ":announcementId"],
+							"variable": [
+								{
+									"key": "announcementId",
+									"value": "ANNOUNCEMENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Announcement",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{baseUrl}}/admin/announcements/:announcementId",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "announcements", ":announcementId"],
+							"variable": [
+								{
+									"key": "announcementId",
+									"value": "ANNOUNCEMENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Events",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/events",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "events"]
+						}
+					}
+				},
+				{
+					"name": "Approve/Reject Event",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"approved\",\n  \"comments\": \"Event approved\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/events/:eventId",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "events", ":eventId"],
+							"variable": [
+								{
+									"key": "eventId",
+									"value": "EVENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Assignments",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/assignments?status=active&page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "assignments"],
+							"query": [
+								{
+									"key": "status",
+									"value": "active"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Grades",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/grades?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "grades"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Attendance",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/admin/attendance?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "attendance"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Faculty Routes",
+			"item": [
+				{
+					"name": "Get Faculty Profile",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "profile"]
+						}
+					}
+				},
+				{
+					"name": "Get Assigned Students",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/students",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "students"]
+						}
+					}
+				},
+				{
+					"name": "Get Students by Subject",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/students/subject/:subjectCode",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "students", "subject", ":subjectCode"],
+							"variable": [
+								{
+									"key": "subjectCode",
+									"value": "AJP"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Add/Update Student Grade",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentId\": \"STUDENT_ID_HERE\",\n  \"subjectCode\": \"AJP\",\n  \"examType\": \"midterm\",\n  \"marks\": 85,\n  \"totalMarks\": 100,\n  \"examDate\": \"2025-01-15\",\n  \"remarks\": \"Good performance\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/grades",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "grades"]
+						}
+					}
+				},
+				{
+					"name": "Get Grades for Subject",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/grades/subject/:subjectCode",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "grades", "subject", ":subjectCode"],
+							"variable": [
+								{
+									"key": "subjectCode",
+									"value": "AJP"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Grade",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"marks\": 90,\n  \"totalMarks\": 100,\n  \"examDate\": \"2025-01-15\",\n  \"remarks\": \"Excellent work\",\n  \"status\": \"published\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/grades/:gradeId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "grades", ":gradeId"],
+							"variable": [
+								{
+									"key": "gradeId",
+									"value": "GRADE_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Grade",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/grades/:gradeId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "grades", ":gradeId"],
+							"variable": [
+								{
+									"key": "gradeId",
+									"value": "GRADE_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Mark Attendance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentId\": \"STUDENT_ID_HERE\",\n  \"subjectCode\": \"AJP\",\n  \"date\": \"2025-01-15\",\n  \"status\": \"present\",\n  \"classTime\": {\n    \"start\": \"10:00 AM\",\n    \"end\": \"11:00 AM\"\n  },\n  \"room\": \"D-204\",\n  \"remarks\": \"On time\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/attendance",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "attendance"]
+						}
+					}
+				},
+				{
+					"name": "Get Attendance for Subject",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/attendance/subject/:subjectCode",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "attendance", "subject", ":subjectCode"],
+							"variable": [
+								{
+									"key": "subjectCode",
+									"value": "AJP"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Attendance",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"late\",\n  \"remarks\": \"Student arrived late\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/attendance/:attendanceId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "attendance", ":attendanceId"],
+							"variable": [
+								{
+									"key": "attendanceId",
+									"value": "ATTENDANCE_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Attendance",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/attendance/:attendanceId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "attendance", ":attendanceId"],
+							"variable": [
+								{
+									"key": "attendanceId",
+									"value": "ATTENDANCE_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Assignment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Java Programming Assignment\",\n  \"description\": \"Create a Java application with GUI\",\n  \"subjectCode\": \"AJP\",\n  \"dueDate\": \"2025-02-15\",\n  \"maxMarks\": 50,\n  \"instructions\": \"Submit the source code and executable\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/assignments",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "assignments"]
+						}
+					}
+				},
+				{
+					"name": "Get Faculty Assignments",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/assignments",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "assignments"]
+						}
+					}
+				},
+				{
+					"name": "Grade Assignment Submission",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentId\": \"STUDENT_ID_HERE\",\n  \"marks\": 45,\n  \"feedback\": \"Good implementation but needs improvement\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/assignments/:assignmentId/grade",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "assignments", ":assignmentId", "grade"],
+							"variable": [
+								{
+									"key": "assignmentId",
+									"value": "ASSIGNMENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Assignment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Assignment Title\",\n  \"description\": \"Updated description\",\n  \"dueDate\": \"2025-02-20\",\n  \"maxMarks\": 60,\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/assignments/:assignmentId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "assignments", ":assignmentId"],
+							"variable": [
+								{
+									"key": "assignmentId",
+									"value": "ASSIGNMENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Assignment",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/assignments/:assignmentId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "assignments", ":assignmentId"],
+							"variable": [
+								{
+									"key": "assignmentId",
+									"value": "ASSIGNMENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Post Faculty Announcement",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Class Schedule Update\",\n  \"content\": \"Class timings have been updated\",\n  \"targetAudience\": \"students\",\n  \"department\": \"Information Technology\",\n  \"priority\": \"medium\",\n  \"category\": \"academic\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/announcements",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "announcements"]
+						}
+					}
+				},
+				{
+					"name": "Get Faculty Announcements",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/announcements",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "announcements"]
+						}
+					}
+				},
+				{
+					"name": "Get Announcements Feed",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/announcements/feed",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "announcements", "feed"]
+						}
+					}
+				},
+				{
+					"name": "Get Student Complaints",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/complaints",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "complaints"]
+						}
+					}
+				},
+				{
+					"name": "Update Complaint Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"resolved\",\n  \"resolution\": \"Issue resolved\",\n  \"actionTaken\": \"Fixed the problem\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/complaints/:complaintId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "complaints", ":complaintId"],
+							"variable": [
+								{
+									"key": "complaintId",
+									"value": "COMPLAINT_ID_HERE"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Student Routes",
+			"item": [
+				{
+					"name": "Get Student Profile",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "profile"]
+						}
+					}
+				},
+				{
+					"name": "Get Student Grades",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/grades",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "grades"]
+						}
+					}
+				},
+				{
+					"name": "Get Student Attendance",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/attendance?semester=1&year=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "attendance"],
+							"query": [
+								{
+									"key": "semester",
+									"value": "1"
+								},
+								{
+									"key": "year",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Student Assignments",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/assignments",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "assignments"]
+						}
+					}
+				},
+				{
+					"name": "Submit Assignment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "assignmentId",
+									"value": "ASSIGNMENT_ID_HERE",
+									"type": "text"
+								},
+								{
+									"key": "assignment",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/assignments/submit",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "assignments", "submit"]
+						}
+					}
+				},
+				{
+					"name": "Submit Complaint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"complaintType\": \"academics\",\n  \"subject\": \"Assignment Issue\",\n  \"description\": \"Unable to submit assignment due to technical issues\",\n  \"priority\": \"high\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/complaints",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "complaints"]
+						}
+					}
+				},
+				{
+					"name": "Get Student Complaints",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/complaints",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "complaints"]
+						}
+					}
+				},
+				{
+					"name": "Get Student Announcements",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/announcements",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "announcements"]
+						}
+					}
+				},
+				{
+					"name": "Mark Announcement as Viewed",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{baseUrl}}/student/announcements/:announcementId/view",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "announcements", ":announcementId", "view"],
+							"variable": [
+								{
+									"key": "announcementId",
+									"value": "ANNOUNCEMENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Timetable",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/timetable",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "timetable"]
+						}
+					}
+				},
+				{
+					"name": "Get Exam Schedule",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/exams",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "exams"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
