@@ -409,7 +409,7 @@ POST /api/faculty/attendance
 ```json
 {
   "studentId": "student_id",
-  "subjectCode": "WT",
+  "subjectId": "subject_id",
   "date": "2024-01-15",
   "status": "present",
   "classTime": {

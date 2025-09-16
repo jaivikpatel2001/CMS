@@ -3582,6 +3582,152 @@ function closeSubjectDetailsModal() {
     document.getElementById('subjectDetailsModal').classList.add('hidden');
 }
 
+// ======================= STUDENT ENROLLMENT FUNCTIONS =======================
+
+// Open enrollment modal
+function openEnrollStudentsModal(subjectId, subjectCode, subjectName) {
+    const modal = document.getElementById('enrollStudentsModal');
+    const subjectNameSpan = document.getElementById('enroll-subject-name');
+    const subjectIdInput = document.getElementById('enroll-subject-id');
+    
+    // Set subject information
+    subjectNameSpan.textContent = `${subjectCode} - ${subjectName}`;
+    subjectIdInput.value = subjectId;
+    
+    // Clear form
+    document.getElementById('enroll-student-id').value = '';
+    document.getElementById('enroll-student-number').value = '';
+    
+    // Load enrolled students
+    loadEnrolledStudents(subjectId);
+    
+    // Show modal
+    modal.classList.remove('hidden');
+}
+
+// Close enrollment modal
+function closeEnrollStudentsModal() {
+    const modal = document.getElementById('enrollStudentsModal');
+    modal.classList.add('hidden');
+}
+
+// Load enrolled students for a subject
+async function loadEnrolledStudents(subjectId) {
+    try {
+        const response = await apiRequest(`/faculty/subjects/${subjectId}/students`);
+        
+        if (response.success) {
+            displayEnrolledStudents(response.students);
+        } else {
+            document.getElementById('enrolled-students-list').innerHTML = 
+                '<div class="text-center text-red-500">Error loading enrolled students</div>';
+        }
+    } catch (error) {
+        console.error('Error loading enrolled students:', error);
+        document.getElementById('enrolled-students-list').innerHTML = 
+            '<div class="text-center text-red-500">Error loading enrolled students</div>';
+    }
+}
+
+// Display enrolled students
+function displayEnrolledStudents(students) {
+    const container = document.getElementById('enrolled-students-list');
+    
+    if (students.length === 0) {
+        container.innerHTML = '<div class="text-center text-gray-500">No students enrolled yet</div>';
+        return;
+    }
+    
+    container.innerHTML = students.map(student => `
+        <div class="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 mb-2">
+            <div>
+                <div class="font-medium text-gray-900">${student.studentId.userId.firstName} ${student.studentId.userId.lastName}</div>
+                <div class="text-sm text-gray-500">${student.enrollmentNumber}</div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-500">Enrolled: ${new Date(student.enrolledAt).toLocaleDateString()}</span>
+                <button onclick="unenrollStudent('${student.studentId._id}', '${student.enrollmentNumber}')" 
+                        class="text-red-600 hover:text-red-800 text-sm font-medium">
+                    Unenroll
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Enroll a student in the subject
+async function enrollStudent() {
+    const subjectId = document.getElementById('enroll-subject-id').value;
+    const studentId = document.getElementById('enroll-student-id').value.trim();
+    const enrollmentNumber = document.getElementById('enroll-student-number').value.trim();
+    
+    if (!studentId || !enrollmentNumber) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    try {
+        const response = await apiRequest(`/faculty/subjects/${subjectId}/enroll`, {
+            method: 'POST',
+            body: JSON.stringify({
+                studentId: studentId,
+                enrollmentNumber: enrollmentNumber
+            })
+        });
+        
+        if (response.success) {
+            showNotification('Student enrolled successfully!', 'success');
+            
+            // Clear form
+            document.getElementById('enroll-student-id').value = '';
+            document.getElementById('enroll-student-number').value = '';
+            
+            // Reload enrolled students
+            await loadEnrolledStudents(subjectId);
+            
+            // Refresh subjects table
+            await loadFacultySubjects();
+        } else {
+            showNotification(response.message || 'Failed to enroll student', 'error');
+        }
+    } catch (error) {
+        console.error('Error enrolling student:', error);
+        showNotification('Error enrolling student', 'error');
+    }
+}
+
+// Unenroll a student from the subject
+async function unenrollStudent(studentId, enrollmentNumber) {
+    const subjectId = document.getElementById('enroll-subject-id').value;
+    
+    if (!confirm(`Are you sure you want to unenroll ${enrollmentNumber} from this subject?`)) {
+        return;
+    }
+    
+    try {
+        const response = await apiRequest(`/faculty/subjects/${subjectId}/enroll/${studentId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.success) {
+            showNotification('Student unenrolled successfully!', 'success');
+            
+            // Reload enrolled students
+            await loadEnrolledStudents(subjectId);
+            
+            // Refresh subjects table
+            await loadFacultySubjects();
+        } else {
+            showNotification(response.message || 'Failed to unenroll student', 'error');
+        }
+    } catch (error) {
+        console.error('Error unenrolling student:', error);
+        showNotification('Error unenrolling student', 'error');
+    }
+}
+
+// ======================= END STUDENT ENROLLMENT FUNCTIONS =======================
+
 // Load faculty subjects
 async function loadFacultySubjects() {
     try {
@@ -3650,6 +3796,7 @@ function displaySubjectsTable(subjects) {
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div class="flex space-x-2">
                     <button onclick="openSubjectDetailsModal('${subject._id}')" class="text-blue-600 hover:text-blue-900">View</button>
+                    <button onclick="openEnrollStudentsModal('${subject._id}', '${subject.subjectCode}', '${subject.subjectName}')" class="text-green-600 hover:text-green-900">Enroll</button>
                     <button onclick="openEditSubjectModal('${subject._id}')" class="text-indigo-600 hover:text-indigo-900">Edit</button>
                     <button onclick="deleteSubject('${subject._id}')" class="text-red-600 hover:text-red-900">Delete</button>
                 </div>

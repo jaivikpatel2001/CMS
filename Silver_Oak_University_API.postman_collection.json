@@ -725,7 +725,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"studentId\": \"STUDENT_ID_HERE\",\n  \"subjectCode\": \"AJP\",\n  \"date\": \"2025-01-15\",\n  \"status\": \"present\",\n  \"classTime\": {\n    \"start\": \"10:00 AM\",\n    \"end\": \"11:00 AM\"\n  },\n  \"room\": \"D-204\",\n  \"remarks\": \"On time\"\n}"
+							"raw": "{\n  \"studentId\": \"STUDENT_ID_HERE\",\n  \"subjectId\": \"SUBJECT_ID_HERE\",\n  \"date\": \"2025-01-15\",\n  \"status\": \"present\",\n  \"classTime\": {\n    \"start\": \"10:00 AM\",\n    \"end\": \"11:00 AM\"\n  },\n  \"room\": \"D-204\",\n  \"remarks\": \"On time\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/faculty/attendance",

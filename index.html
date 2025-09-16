@@ -1272,6 +1272,73 @@
         </div>
     </div>
 
+    <!-- ======================= ENROLL STUDENTS MODAL ======================= -->
+    <div id="enrollStudentsModal" class="modal hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold text-[#8b3d4f]">Enroll Students</h3>
+                <button onclick="closeEnrollStudentsModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <div class="mb-6">
+                    <h4 class="text-lg font-medium text-gray-800 mb-2" id="enroll-subject-title">Subject: <span id="enroll-subject-name"></span></h4>
+                    <p class="text-sm text-gray-600">Enroll students in this subject. Students must exist in the system to be enrolled.</p>
+                </div>
+
+                <!-- Current Enrolled Students -->
+                <div class="mb-6">
+                    <h5 class="text-md font-medium text-gray-700 mb-3">Currently Enrolled Students</h5>
+                    <div id="enrolled-students-list" class="bg-gray-50 rounded-lg p-4 min-h-[100px]">
+                        <div class="text-center text-gray-500">Loading enrolled students...</div>
+                    </div>
+                </div>
+
+                <!-- Enroll New Student Form -->
+                <div class="border-t pt-6">
+                    <h5 class="text-md font-medium text-gray-700 mb-4">Enroll New Student</h5>
+                    <form id="enrollStudentForm" class="space-y-4" onsubmit="return false;">
+                        <input type="hidden" id="enroll-subject-id" name="subjectId">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="enroll-student-id" class="block text-sm font-medium text-gray-700 mb-2">Student ID *</label>
+                                <input type="text" id="enroll-student-id" name="studentId" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" 
+                                       placeholder="Enter student MongoDB ObjectId">
+                            </div>
+                            
+                            <div>
+                                <label for="enroll-student-number" class="block text-sm font-medium text-gray-700 mb-2">Enrollment Number *</label>
+                                <input type="text" id="enroll-student-number" name="enrollmentNumber" required 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" 
+                                       placeholder="e.g., C123456">
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end">
+                            <button type="button" onclick="enrollStudent()" 
+                                    class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200 font-medium">
+                                Enroll Student
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button type="button" onclick="closeEnrollStudentsModal()" 
+                        class="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ======================= EDIT SUBJECT MODAL ======================= -->
     <div id="editSubjectModal" class="modal hidden">
         <div class="modal-content max-w-4xl">

@@ -303,14 +303,14 @@ router.delete('/grades/:gradeId', asyncHandler(async (req, res) => {
 // Mark attendance
 router.post('/attendance', validateRequest({
     studentId: { required: true },
-    subjectCode: { required: true },
+    subjectId: { required: true },
     date: { required: true },
     status: { required: true, enum: ['present', 'absent', 'late', 'excused'] },
     classTime: { required: true },
     room: { required: true },
     remarks: { maxLength: 200 }
 }), asyncHandler(async (req, res) => {
-    const { studentId, subjectCode, date, status, classTime, room, remarks } = req.body;
+    const { studentId, subjectId, date, status, classTime, room, remarks } = req.body;
     const faculty = await Faculty.findOne({ userId: req.user._id });
     
     if (!faculty) {
@@ -328,22 +328,39 @@ router.post('/attendance', validateRequest({
         });
     }
 
-    // Check if faculty teaches this subject to this student
-    const subject = student.subjects.find(sub => 
-        sub.subjectCode === subjectCode && sub.facultyId.toString() === faculty._id.toString()
-    );
-
+    // Find the subject and verify faculty teaches it
+    const subject = await Subject.findById(subjectId);
     if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    // Check if faculty teaches this subject
+    if (subject.facultyId.toString() !== faculty._id.toString()) {
         return res.status(403).json({
             success: false,
             message: 'You are not authorized to mark attendance for this subject'
         });
     }
 
+    // Check if student is enrolled in this subject
+    const isEnrolled = subject.enrolledStudents.some(enrollment => 
+        enrollment.studentId.toString() === studentId
+    );
+
+    if (!isEnrolled) {
+        return res.status(403).json({
+            success: false,
+            message: 'Student is not enrolled in this subject'
+        });
+    }
+
     // Check if attendance already marked for this date
     const existingAttendance = await Attendance.findOne({
         studentId,
-        subjectCode,
+        subjectId,
         date: new Date(date)
     });
 
@@ -357,7 +374,8 @@ router.post('/attendance', validateRequest({
     const attendance = new Attendance({
         studentId,
         enrollmentNumber: student.enrollmentNumber,
-        subjectCode,
+        subjectId: subject._id,
+        subjectCode: subject.subjectCode,
         subjectName: subject.subjectName,
         facultyId: faculty._id,
         semester: student.semester,
