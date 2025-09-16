@@ -28,6 +28,11 @@ const gradeSchema = new mongoose.Schema({
         ref: 'Faculty',
         required: true
     },
+    subjectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Subject',
+        required: true
+    },
     semester: {
         type: Number,
         required: true,
@@ -107,8 +112,10 @@ const gradeSchema = new mongoose.Schema({
 
 // Index for efficient queries
 gradeSchema.index({ studentId: 1, subjectCode: 1 });
+gradeSchema.index({ studentId: 1, subjectId: 1 });
 gradeSchema.index({ enrollmentNumber: 1 });
 gradeSchema.index({ facultyId: 1 });
+gradeSchema.index({ subjectId: 1 });
 gradeSchema.index({ semester: 1, year: 1 });
 
 // Compound index for unique grade per student per subject per exam
@@ -148,6 +155,59 @@ gradeSchema.methods.calculateGrade = function() {
     if (percentage >= 40) return 'C';
     if (percentage >= 35) return 'D';
     return 'F';
+};
+
+// Static method to get grades by subject
+gradeSchema.statics.getGradesBySubject = function(subjectId) {
+    return this.find({ subjectId })
+        .populate('studentId', 'userId enrollmentNumber')
+        .populate('studentId.userId', 'firstName lastName')
+        .populate('facultyId', 'userId employeeId department')
+        .populate('facultyId.userId', 'firstName lastName')
+        .sort({ examDate: -1 });
+};
+
+// Static method to get grades by faculty and subject
+gradeSchema.statics.getGradesByFacultyAndSubject = function(facultyId, subjectId) {
+    return this.find({ facultyId, subjectId })
+        .populate('studentId', 'userId enrollmentNumber')
+        .populate('studentId.userId', 'firstName lastName')
+        .populate('subjectId', 'subjectCode subjectName semester year')
+        .sort({ examDate: -1 });
+};
+
+// Static method to get student's grades for a subject
+gradeSchema.statics.getStudentGradesForSubject = function(studentId, subjectId) {
+    return this.find({ studentId, subjectId })
+        .populate('facultyId', 'userId employeeId department')
+        .populate('facultyId.userId', 'firstName lastName')
+        .sort({ examDate: -1 });
+};
+
+// Static method to calculate subject average
+gradeSchema.statics.calculateSubjectAverage = async function(subjectId, examType = null) {
+    const query = { subjectId };
+    if (examType) {
+        query.examType = examType;
+    }
+
+    const grades = await this.find(query);
+    
+    if (grades.length === 0) {
+        return { average: 0, totalStudents: 0, passRate: 0 };
+    }
+
+    const totalMarks = grades.reduce((sum, grade) => sum + grade.marks.obtained, 0);
+    const average = Math.round(totalMarks / grades.length);
+    const passedStudents = grades.filter(grade => grade.isPassed).length;
+    const passRate = Math.round((passedStudents / grades.length) * 100);
+
+    return {
+        average,
+        totalStudents: grades.length,
+        passRate,
+        totalMarks: grades.reduce((sum, grade) => sum + grade.marks.total, 0)
+    };
 };
 
 module.exports = mongoose.model('Grade', gradeSchema);

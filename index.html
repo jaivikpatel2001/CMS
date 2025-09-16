@@ -502,10 +502,20 @@
         <main class="p-6">
             <h2 class="text-3xl font-bold text-gray-800 mb-8">Welcome</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Subject Management Card -->
+                <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <h3 class="text-xl font-semibold text-[#8b3d4f] border-b-2 border-gray-200 pb-3 mb-4">Subject Management</h3>
+                    <p class="text-sm text-gray-600 mb-4">Create, edit, and manage your subjects.</p>
+                    <div class="space-y-3">
+                        <button onclick="openSubjectManagementModal()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">Manage Subjects</button>
+                        <button onclick="openCreateSubjectModal()" class="w-full py-2 px-4 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 transition-colors duration-200">Create New Subject</button>
+                    </div>
+                </div>
+
                 <!-- My Courses Card -->
                 <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                     <h3 class="text-xl font-semibold text-[#8b3d4f] border-b-2 border-gray-200 pb-3 mb-4">My Courses</h3>
-                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                    <ul id="faculty-courses-list" class="list-disc list-inside space-y-2 text-gray-700">
                         <!-- Populated dynamically -->
                     </ul>
                 </div>
@@ -524,9 +534,8 @@
                 <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                     <h3 class="text-xl font-semibold text-[#8b3d4f] border-b-2 border-gray-200 pb-3 mb-4">Manage Student Grades</h3>
                     <p class="text-sm text-gray-600 mb-4">Select a course to view and update grades.</p>
-                    <select class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm mb-4">
-                        <option>AJP - AJP - Advanced Java Programming</option>
-                        <option>BPP - BPP - Basic Of Python Programing</option>
+                    <select id="grades-subject-dashboard" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm mb-4">
+                        <option value="">Loading subjects...</option>
                     </select>
                     <button onclick="openViewGradesModal()" class="w-full py-2 px-4 bg-[#8b3d4f] text-white font-semibold rounded-md hover:bg-[#a24f63] transition-colors duration-200">View Grades</button>
                 </div>
@@ -981,10 +990,8 @@
                     
                     <div>
                         <label for="assignment-subject" class="block text-sm font-medium text-gray-700">Subject *</label>
-                        <select id="assignment-subject" name="subjectCode" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm">
-                            <option value="">Select Subject</option>
-                            <option value="AJP">AJP - Advanced Java Programming</option>
-                            <option value="BPP">BPP - Basic Of Python Programing</option>
+                        <select id="assignment-subject" name="subjectId" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm">
+                            <option value="">Loading subjects...</option>
                         </select>
                     </div>
                     
@@ -1032,9 +1039,7 @@
                 <div class="mb-4">
                     <label for="grades-subject" class="block text-sm font-medium text-gray-700">Select Subject</label>
                     <select id="grades-subject" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#8b3d4f] focus:border-[#8b3d4f] sm:text-sm">
-                        <option value="">Select Subject</option>
-                        <option value="AJP">AJP - AJP - Advanced Java Programming</option>
-                        <option value="BPP">BPP - BPP - Basic Of Python Programing</option>
+                        <option value="">Loading subjects...</option>
                     </select>
                 </div>
                 
@@ -1096,6 +1101,299 @@
         </div>
     </div>
 
+    <!-- ======================= SUBJECT MANAGEMENT MODAL ======================= -->
+    <div id="subjectManagementModal" class="modal hidden">
+        <div class="modal-content max-w-6xl">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold text-[#8b3d4f]">Subject Management</h3>
+                <button onclick="closeSubjectManagementModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-medium text-gray-800">Your Subjects</h4>
+                        <button onclick="openCreateSubjectModal()" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors duration-200">
+                            + Add Subject
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Code</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credits</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectsTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Subjects will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button type="button" onclick="closeSubjectManagementModal()" class="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= CREATE SUBJECT MODAL ======================= -->
+    <div id="createSubjectModal" class="modal hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold text-[#8b3d4f]">Create New Subject</h3>
+                <button onclick="closeCreateSubjectModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <form id="createSubjectForm" class="space-y-6" onsubmit="return false;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="subject-code" class="block text-sm font-medium text-gray-700 mb-2">Subject Code *</label>
+                            <input type="text" id="subject-code" name="subjectCode" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="e.g., CS101">
+                        </div>
+                        
+                        <div>
+                            <label for="subject-name" class="block text-sm font-medium text-gray-700 mb-2">Subject Name *</label>
+                            <input type="text" id="subject-name" name="subjectName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="e.g., Data Structures">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="subject-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="subject-description" name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Brief description of the subject"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="subject-semester" class="block text-sm font-medium text-gray-700 mb-2">Semester *</label>
+                            <select id="subject-semester" name="semester" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                                <option value="">Select Semester</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                                <option value="5">Semester 5</option>
+                                <option value="6">Semester 6</option>
+                                <option value="7">Semester 7</option>
+                                <option value="8">Semester 8</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="subject-year" class="block text-sm font-medium text-gray-700 mb-2">Year *</label>
+                            <select id="subject-year" name="year" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                                <option value="">Select Year</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="subject-credits" class="block text-sm font-medium text-gray-700 mb-2">Credits *</label>
+                            <input type="number" id="subject-credits" name="credits" required min="1" max="6" value="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="subject-department" class="block text-sm font-medium text-gray-700 mb-2">Department *</label>
+                            <input type="text" id="subject-department" name="department" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="e.g., Computer Science">
+                        </div>
+                        
+                        <div>
+                            <label for="subject-academic-year" class="block text-sm font-medium text-gray-700 mb-2">Academic Year *</label>
+                            <input type="text" id="subject-academic-year" name="academicYear" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="e.g., 2024-25">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="subject-max-students" class="block text-sm font-medium text-gray-700 mb-2">Maximum Students</label>
+                        <input type="number" id="subject-max-students" name="maxStudents" min="1" max="200" value="60" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="subject-syllabus" class="block text-sm font-medium text-gray-700 mb-2">Syllabus</label>
+                        <textarea id="subject-syllabus" name="syllabus" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent" placeholder="Detailed syllabus content"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Evaluation Criteria</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <label for="eval-midterm" class="block text-xs font-medium text-gray-600 mb-1">Midterm (%)</label>
+                                <input type="number" id="eval-midterm" name="evaluationCriteria.midterm" min="0" max="100" value="30" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div>
+                                <label for="eval-final" class="block text-xs font-medium text-gray-600 mb-1">Final (%)</label>
+                                <input type="number" id="eval-final" name="evaluationCriteria.final" min="0" max="100" value="50" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div>
+                                <label for="eval-assignments" class="block text-xs font-medium text-gray-600 mb-1">Assignments (%)</label>
+                                <input type="number" id="eval-assignments" name="evaluationCriteria.assignments" min="0" max="100" value="10" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div>
+                                <label for="eval-attendance" class="block text-xs font-medium text-gray-600 mb-1">Attendance (%)</label>
+                                <input type="number" id="eval-attendance" name="evaluationCriteria.attendance" min="0" max="100" value="10" class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button type="button" onclick="closeCreateSubjectModal()" class="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                    Cancel
+                </button>
+                <button type="button" onclick="createNewSubject()" class="px-6 py-2 bg-[#8b3d4f] text-white rounded-md hover:bg-[#a24f63] transition-colors duration-200 font-medium">
+                    Create Subject
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= EDIT SUBJECT MODAL ======================= -->
+    <div id="editSubjectModal" class="modal hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold text-[#8b3d4f]">Edit Subject</h3>
+                <button onclick="closeEditSubjectModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <form id="editSubjectForm" class="space-y-6" onsubmit="return false;">
+                    <input type="hidden" id="edit-subject-id" name="subjectId">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="edit-subject-code" class="block text-sm font-medium text-gray-700 mb-2">Subject Code *</label>
+                            <input type="text" id="edit-subject-code" name="subjectCode" required readonly class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
+                        </div>
+                        
+                        <div>
+                            <label for="edit-subject-name" class="block text-sm font-medium text-gray-700 mb-2">Subject Name *</label>
+                            <input type="text" id="edit-subject-name" name="subjectName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="edit-subject-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="edit-subject-description" name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="edit-subject-semester" class="block text-sm font-medium text-gray-700 mb-2">Semester *</label>
+                            <select id="edit-subject-semester" name="semester" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                                <option value="">Select Semester</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Semester 3</option>
+                                <option value="4">Semester 4</option>
+                                <option value="5">Semester 5</option>
+                                <option value="6">Semester 6</option>
+                                <option value="7">Semester 7</option>
+                                <option value="8">Semester 8</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="edit-subject-year" class="block text-sm font-medium text-gray-700 mb-2">Year *</label>
+                            <select id="edit-subject-year" name="year" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                                <option value="">Select Year</option>
+                                <option value="1">Year 1</option>
+                                <option value="2">Year 2</option>
+                                <option value="3">Year 3</option>
+                                <option value="4">Year 4</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="edit-subject-credits" class="block text-sm font-medium text-gray-700 mb-2">Credits *</label>
+                            <input type="number" id="edit-subject-credits" name="credits" required min="1" max="6" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="edit-subject-max-students" class="block text-sm font-medium text-gray-700 mb-2">Maximum Students</label>
+                        <input type="number" id="edit-subject-max-students" name="maxStudents" min="1" max="200" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="edit-subject-syllabus" class="block text-sm font-medium text-gray-700 mb-2">Syllabus</label>
+                        <textarea id="edit-subject-syllabus" name="syllabus" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d4f] focus:border-transparent"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="edit-subject-active" name="isActive" class="rounded border-gray-300 text-[#8b3d4f] focus:ring-[#8b3d4f]">
+                            <span class="ml-2 text-sm text-gray-700">Active Subject</span>
+                        </label>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button type="button" onclick="closeEditSubjectModal()" class="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                    Cancel
+                </button>
+                <button type="button" onclick="updateSubject()" class="px-6 py-2 bg-[#8b3d4f] text-white rounded-md hover:bg-[#a24f63] transition-colors duration-200 font-medium">
+                    Update Subject
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= SUBJECT DETAILS MODAL ======================= -->
+    <div id="subjectDetailsModal" class="modal hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-xl font-semibold text-[#8b3d4f]">Subject Details</h3>
+                <button onclick="closeSubjectDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="subjectDetailsContent">
+                    <!-- Subject details will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button type="button" onclick="closeSubjectDetailsModal()" class="px-6 py-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ======================= PROFILE MODAL ======================= -->
     <div id="profileModal" class="modal hidden">
         <div class="modal-content">
@@ -1126,6 +1424,6 @@
         </div>
     </div>
 
-    <script src="js/app.js?v=5"></script>
+    <script src="js/app.js?v=6"></script>
 </body>
 </html>

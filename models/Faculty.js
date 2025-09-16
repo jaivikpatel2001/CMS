@@ -69,6 +69,11 @@ const facultySchema = new mongoose.Schema({
             default: 3
         }
     }],
+    // Reference to Subject documents for better management
+    subjectReferences: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Subject'
+    }],
     classes: [{
         subjectCode: {
             type: String,
@@ -128,5 +133,34 @@ facultySchema.index({ department: 1 });
 facultySchema.virtual('designationDisplay').get(function() {
     return `${this.designation} - ${this.department}`;
 });
+
+// Method to add subject reference
+facultySchema.methods.addSubjectReference = function(subjectId) {
+    if (!this.subjectReferences.includes(subjectId)) {
+        this.subjectReferences.push(subjectId);
+        return this.save();
+    }
+    return Promise.resolve(this);
+};
+
+// Method to remove subject reference
+facultySchema.methods.removeSubjectReference = function(subjectId) {
+    this.subjectReferences = this.subjectReferences.filter(
+        ref => ref.toString() !== subjectId.toString()
+    );
+    return this.save();
+};
+
+// Method to get all subjects with details
+facultySchema.methods.getSubjectsWithDetails = function() {
+    return this.populate('subjectReferences');
+};
+
+// Static method to get faculty by subject
+facultySchema.statics.getFacultyBySubject = function(subjectCode, academicYear) {
+    return this.findOne({
+        'subjects.subjectCode': subjectCode
+    }).populate('userId', 'firstName lastName email');
+};
 
 module.exports = mongoose.model('Faculty', facultySchema);

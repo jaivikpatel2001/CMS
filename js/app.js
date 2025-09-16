@@ -8,6 +8,69 @@ let currentUser = null;
 let authToken = null;
 const API_BASE_URL = 'http://localhost:3000/api';
 
+// ---- Notification System ----
+function showNotification(message, type = 'info') {
+    // Remove any existing notifications
+    const existingNotification = document.getElementById('notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.id = 'notification';
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+    
+    // Set colors based on type
+    switch (type) {
+        case 'success':
+            notification.classList.add('bg-green-500', 'text-white');
+            break;
+        case 'error':
+            notification.classList.add('bg-red-500', 'text-white');
+            break;
+        case 'warning':
+            notification.classList.add('bg-yellow-500', 'text-white');
+            break;
+        default:
+            notification.classList.add('bg-blue-500', 'text-white');
+    }
+
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <span class="mr-3">
+                ${type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ'}
+            </span>
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    // Add to page
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full');
+    }, 100);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }, 5000);
+}
+
 // ---- Form Validation Helpers ----
 function setFieldError(input, message) {
     if (!input) return;
@@ -919,7 +982,25 @@ async function loadFacultyDashboard() {
         // Load faculty profile
         const profileResponse = await apiRequest('/faculty/profile');
         updateFacultyProfile(profileResponse.faculty);
-        updateFacultyCourses(profileResponse.faculty?.subjects || []);
+        
+        // Load subjects from the new Subject model
+        try {
+            const subjectsResponse = await apiRequest('/faculty/subjects');
+            if (subjectsResponse.success) {
+                updateFacultyCourses(subjectsResponse.subjects || []);
+                displayFacultyCourses(subjectsResponse.subjects || []);
+                
+                // Also populate grades dropdown on dashboard
+                await populateGradesDashboardDropdown(subjectsResponse.subjects || []);
+            } else {
+                // Fallback to old subjects array
+                updateFacultyCourses(profileResponse.faculty?.subjects || []);
+            }
+        } catch (error) {
+            console.error('Error loading subjects:', error);
+            // Fallback to old subjects array
+            updateFacultyCourses(profileResponse.faculty?.subjects || []);
+        }
         
         // Load complaints
         const complaintsResponse = await apiRequest('/faculty/complaints');
@@ -1352,10 +1433,92 @@ function handleTokenExpiration() {
 }
 
 // Faculty Functions
-function openCreateAssignmentModal() {
+async function openCreateAssignmentModal() {
     const modal = document.getElementById('createAssignmentModal');
     modal.classList.remove('hidden');
     modal.classList.add('page-transition');
+    
+    // Load subjects for the dropdown
+    await loadSubjectsForAssignment();
+}
+
+async function loadSubjectsForAssignment() {
+    try {
+        const response = await apiRequest('/faculty/subjects');
+        const subjectSelect = document.getElementById('assignment-subject');
+        
+        if (response.success && response.subjects) {
+            // Clear existing options
+            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+            
+            // Add subjects to dropdown
+            response.subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject._id;
+                option.textContent = `${subject.subjectCode} - ${subject.subjectName}`;
+                subjectSelect.appendChild(option);
+            });
+        } else {
+            subjectSelect.innerHTML = '<option value="">No subjects available</option>';
+        }
+    } catch (error) {
+        console.error('Error loading subjects for assignment:', error);
+        const subjectSelect = document.getElementById('assignment-subject');
+        subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
+    }
+}
+
+async function loadSubjectsForGrades() {
+    try {
+        const response = await apiRequest('/faculty/subjects');
+        const subjectSelect = document.getElementById('grades-subject');
+        
+        if (response.success && response.subjects) {
+            // Clear existing options
+            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+            
+            // Add subjects to dropdown
+            response.subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject._id;
+                option.textContent = `${subject.subjectCode} - ${subject.subjectName}`;
+                subjectSelect.appendChild(option);
+            });
+        } else {
+            subjectSelect.innerHTML = '<option value="">No subjects available</option>';
+        }
+    } catch (error) {
+        console.error('Error loading subjects for grades:', error);
+        const subjectSelect = document.getElementById('grades-subject');
+        subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
+    }
+}
+
+async function populateGradesDashboardDropdown(subjects) {
+    try {
+        const subjectSelect = document.getElementById('grades-subject-dashboard');
+        
+        if (subjectSelect && subjects.length > 0) {
+            // Clear existing options
+            subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+            
+            // Add subjects to dropdown
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject._id;
+                option.textContent = `${subject.subjectCode} - ${subject.subjectName}`;
+                subjectSelect.appendChild(option);
+            });
+        } else if (subjectSelect) {
+            subjectSelect.innerHTML = '<option value="">No subjects available</option>';
+        }
+    } catch (error) {
+        console.error('Error populating grades dashboard dropdown:', error);
+        const subjectSelect = document.getElementById('grades-subject-dashboard');
+        if (subjectSelect) {
+            subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
+        }
+    }
 }
 
 function closeCreateAssignmentModal() {
@@ -1364,12 +1527,13 @@ function closeCreateAssignmentModal() {
     modal.classList.remove('page-transition');
 }
 
-function openViewGradesModal() {
+async function openViewGradesModal() {
     const modal = document.getElementById('viewGradesModal');
     modal.classList.remove('hidden');
     modal.classList.add('page-transition');
-    // Load grades when modal opens
-    loadGradesForSubject();
+    
+    // Load subjects for the dropdown
+    await loadSubjectsForGrades();
     
     // Add event listener for subject change
     const subjectSelect = document.getElementById('grades-subject');
@@ -1503,13 +1667,13 @@ async function createNewAssignment() {
     try {
         const title = document.getElementById('assignment-title')?.value?.trim();
         const description = document.getElementById('assignment-description')?.value?.trim();
-        const subjectCode = document.getElementById('assignment-subject')?.value;
+        const subjectId = document.getElementById('assignment-subject')?.value;
         const dueDate = document.getElementById('assignment-due-date')?.value;
         const maxMarks = document.getElementById('assignment-max-marks')?.value;
         const instructions = document.getElementById('assignment-instructions')?.value?.trim();
 
-        if (!title || !description || !subjectCode || !dueDate || !maxMarks) {
-            showModalMessage('Please fill in all required fields.');
+        if (!title || !description || !subjectId || !dueDate || !maxMarks) {
+            showNotification('Please fill in all required fields.', 'error');
             return;
         }
 
@@ -1518,7 +1682,7 @@ async function createNewAssignment() {
             body: JSON.stringify({
                 title,
                 description,
-                subjectCode,
+                subjectId,
                 dueDate,
                 maxMarks: parseInt(maxMarks),
                 instructions
@@ -1526,7 +1690,7 @@ async function createNewAssignment() {
         });
 
         if (response.success) {
-            showModalMessage('Assignment created successfully!');
+            showNotification('Assignment created successfully!', 'success');
             // Clear form
             document.getElementById('assignment-title').value = '';
             document.getElementById('assignment-description').value = '';
@@ -1537,10 +1701,11 @@ async function createNewAssignment() {
             // Close modal
             closeCreateAssignmentModal();
         } else {
-            showModalMessage('Error creating assignment: ' + response.message);
+            showNotification('Error creating assignment: ' + response.message, 'error');
         }
     } catch (error) {
-        showModalMessage('Error creating assignment: ' + error.message);
+        console.error('Error creating assignment:', error);
+        showNotification('Error creating assignment: ' + error.message, 'error');
     }
 }
 
@@ -3372,4 +3537,455 @@ async function testDirectProfileAPI() {
     } catch (error) {
         console.error('Direct API test error:', error);
     }
+}
+
+// ==================== SUBJECT MANAGEMENT FUNCTIONS ====================
+
+// Subject Management Modal Functions
+function openSubjectManagementModal() {
+    document.getElementById('subjectManagementModal').classList.remove('hidden');
+    loadFacultySubjects();
+}
+
+function closeSubjectManagementModal() {
+    document.getElementById('subjectManagementModal').classList.add('hidden');
+}
+
+function openCreateSubjectModal() {
+    document.getElementById('createSubjectModal').classList.remove('hidden');
+    // Set default academic year
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
+    document.getElementById('subject-academic-year').value = `${currentYear}-${nextYear}`;
+}
+
+function closeCreateSubjectModal() {
+    document.getElementById('createSubjectModal').classList.add('hidden');
+    document.getElementById('createSubjectForm').reset();
+}
+
+function openEditSubjectModal(subjectId) {
+    document.getElementById('editSubjectModal').classList.remove('hidden');
+    loadSubjectForEdit(subjectId);
+}
+
+function closeEditSubjectModal() {
+    document.getElementById('editSubjectModal').classList.add('hidden');
+}
+
+function openSubjectDetailsModal(subjectId) {
+    document.getElementById('subjectDetailsModal').classList.remove('hidden');
+    loadSubjectDetails(subjectId);
+}
+
+function closeSubjectDetailsModal() {
+    document.getElementById('subjectDetailsModal').classList.add('hidden');
+}
+
+// Load faculty subjects
+async function loadFacultySubjects() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/faculty/subjects`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load subjects');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            displaySubjectsTable(data.subjects);
+        } else {
+            showNotification('Failed to load subjects', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading subjects:', error);
+        showNotification('Error loading subjects', 'error');
+    }
+}
+
+// Display subjects in table
+function displaySubjectsTable(subjects) {
+    const tbody = document.getElementById('subjectsTableBody');
+    tbody.innerHTML = '';
+
+    if (subjects.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                    No subjects found. Create your first subject to get started.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    subjects.forEach(subject => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                ${subject.subjectCode}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                ${subject.subjectName}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                Semester ${subject.semester}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                ${subject.credits}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                ${subject.enrolledStudents ? subject.enrolledStudents.length : 0}/${subject.maxStudents}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${subject.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                    ${subject.isActive ? 'Active' : 'Inactive'}
+                </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <div class="flex space-x-2">
+                    <button onclick="openSubjectDetailsModal('${subject._id}')" class="text-blue-600 hover:text-blue-900">View</button>
+                    <button onclick="openEditSubjectModal('${subject._id}')" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                    <button onclick="deleteSubject('${subject._id}')" class="text-red-600 hover:text-red-900">Delete</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Create new subject
+async function createNewSubject() {
+    const form = document.getElementById('createSubjectForm');
+    const formData = new FormData(form);
+    
+    const subjectData = {
+        subjectCode: formData.get('subjectCode'),
+        subjectName: formData.get('subjectName'),
+        description: formData.get('description'),
+        department: formData.get('department'),
+        semester: parseInt(formData.get('semester')),
+        year: parseInt(formData.get('year')),
+        credits: parseInt(formData.get('credits')),
+        academicYear: formData.get('academicYear'),
+        maxStudents: parseInt(formData.get('maxStudents')),
+        syllabus: formData.get('syllabus'),
+        evaluationCriteria: {
+            midterm: parseInt(formData.get('evaluationCriteria.midterm')),
+            final: parseInt(formData.get('evaluationCriteria.final')),
+            assignments: parseInt(formData.get('evaluationCriteria.assignments')),
+            attendance: parseInt(formData.get('evaluationCriteria.attendance'))
+        }
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/faculty/subjects`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(subjectData)
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Subject created successfully', 'success');
+            closeCreateSubjectModal();
+            loadFacultySubjects();
+            loadFacultyCourses(); // Refresh courses list
+        } else {
+            showNotification(data.message || 'Failed to create subject', 'error');
+        }
+    } catch (error) {
+        console.error('Error creating subject:', error);
+        showNotification('Error creating subject', 'error');
+    }
+}
+
+// Load subject for editing
+async function loadSubjectForEdit(subjectId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/faculty/subjects/${subjectId}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load subject');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            populateEditSubjectForm(data.subject);
+        } else {
+            showNotification('Failed to load subject', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading subject:', error);
+        showNotification('Error loading subject', 'error');
+    }
+}
+
+// Populate edit subject form
+function populateEditSubjectForm(subject) {
+    document.getElementById('edit-subject-id').value = subject._id;
+    document.getElementById('edit-subject-code').value = subject.subjectCode;
+    document.getElementById('edit-subject-name').value = subject.subjectName;
+    document.getElementById('edit-subject-description').value = subject.description || '';
+    document.getElementById('edit-subject-semester').value = subject.semester;
+    document.getElementById('edit-subject-year').value = subject.year;
+    document.getElementById('edit-subject-credits').value = subject.credits;
+    document.getElementById('edit-subject-max-students').value = subject.maxStudents;
+    document.getElementById('edit-subject-syllabus').value = subject.syllabus || '';
+    document.getElementById('edit-subject-active').checked = subject.isActive;
+}
+
+// Update subject
+async function updateSubject() {
+    const form = document.getElementById('editSubjectForm');
+    const formData = new FormData(form);
+    const subjectId = formData.get('subjectId');
+    
+    const updateData = {
+        subjectName: formData.get('subjectName'),
+        description: formData.get('description'),
+        semester: parseInt(formData.get('semester')),
+        year: parseInt(formData.get('year')),
+        credits: parseInt(formData.get('credits')),
+        maxStudents: parseInt(formData.get('maxStudents')),
+        syllabus: formData.get('syllabus'),
+        isActive: formData.get('isActive') === 'on'
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/faculty/subjects/${subjectId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updateData)
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Subject updated successfully', 'success');
+            closeEditSubjectModal();
+            loadFacultySubjects();
+            loadFacultyCourses(); // Refresh courses list
+        } else {
+            showNotification(data.message || 'Failed to update subject', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating subject:', error);
+        showNotification('Error updating subject', 'error');
+    }
+}
+
+// Delete subject
+async function deleteSubject(subjectId) {
+    if (!confirm('Are you sure you want to delete this subject? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/faculty/subjects/${subjectId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Subject deleted successfully', 'success');
+            loadFacultySubjects();
+            loadFacultyCourses(); // Refresh courses list
+        } else {
+            showNotification(data.message || 'Failed to delete subject', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting subject:', error);
+        showNotification('Error deleting subject', 'error');
+    }
+}
+
+// Load subject details
+async function loadSubjectDetails(subjectId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/faculty/subjects/${subjectId}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load subject details');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            displaySubjectDetails(data.subject);
+        } else {
+            showNotification('Failed to load subject details', 'error');
+        }
+    } catch (error) {
+        console.error('Error loading subject details:', error);
+        showNotification('Error loading subject details', 'error');
+    }
+}
+
+// Display subject details
+function displaySubjectDetails(subject) {
+    const content = document.getElementById('subjectDetailsContent');
+    content.innerHTML = `
+        <div class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Basic Information</h4>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="font-medium">Subject Code:</span> ${subject.subjectCode}</div>
+                        <div><span class="font-medium">Subject Name:</span> ${subject.subjectName}</div>
+                        <div><span class="font-medium">Department:</span> ${subject.department}</div>
+                        <div><span class="font-medium">Semester:</span> ${subject.semester}</div>
+                        <div><span class="font-medium">Year:</span> ${subject.year}</div>
+                        <div><span class="font-medium">Credits:</span> ${subject.credits}</div>
+                        <div><span class="font-medium">Academic Year:</span> ${subject.academicYear}</div>
+                        <div><span class="font-medium">Status:</span> 
+                            <span class="px-2 py-1 text-xs rounded-full ${subject.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${subject.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Enrollment Information</h4>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="font-medium">Enrolled Students:</span> ${subject.enrolledStudents ? subject.enrolledStudents.length : 0}</div>
+                        <div><span class="font-medium">Maximum Students:</span> ${subject.maxStudents}</div>
+                        <div><span class="font-medium">Available Seats:</span> ${subject.maxStudents - (subject.enrolledStudents ? subject.enrolledStudents.length : 0)}</div>
+                        <div><span class="font-medium">Enrollment Rate:</span> ${Math.round(((subject.enrolledStudents ? subject.enrolledStudents.length : 0) / subject.maxStudents) * 100)}%</div>
+                    </div>
+                </div>
+            </div>
+            
+            ${subject.description ? `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Description</h4>
+                    <p class="text-sm text-gray-700">${subject.description}</p>
+                </div>
+            ` : ''}
+            
+            ${subject.syllabus ? `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Syllabus</h4>
+                    <p class="text-sm text-gray-700 whitespace-pre-wrap">${subject.syllabus}</p>
+                </div>
+            ` : ''}
+            
+            ${subject.evaluationCriteria ? `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Evaluation Criteria</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div><span class="font-medium">Midterm:</span> ${subject.evaluationCriteria.midterm}%</div>
+                        <div><span class="font-medium">Final:</span> ${subject.evaluationCriteria.final}%</div>
+                        <div><span class="font-medium">Assignments:</span> ${subject.evaluationCriteria.assignments}%</div>
+                        <div><span class="font-medium">Attendance:</span> ${subject.evaluationCriteria.attendance}%</div>
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${subject.enrolledStudents && subject.enrolledStudents.length > 0 ? `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Enrolled Students</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Enrollment Number</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Enrolled Date</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                ${subject.enrolledStudents.map(student => `
+                                    <tr>
+                                        <td class="px-4 py-2 text-sm text-gray-900">
+                                            ${student.studentId && student.studentId.userId ? 
+                                                `${student.studentId.userId.firstName} ${student.studentId.userId.lastName}` : 
+                                                'N/A'
+                                            }
+                                        </td>
+                                        <td class="px-4 py-2 text-sm text-gray-900">${student.enrollmentNumber}</td>
+                                        <td class="px-4 py-2 text-sm text-gray-500">
+                                            ${new Date(student.enrolledAt).toLocaleDateString()}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Load faculty courses for the My Courses section
+async function loadFacultyCourses() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/faculty/subjects`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load courses');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            displayFacultyCourses(data.subjects);
+        }
+    } catch (error) {
+        console.error('Error loading courses:', error);
+    }
+}
+
+// Display faculty courses
+function displayFacultyCourses(subjects) {
+    const coursesList = document.getElementById('faculty-courses-list');
+    coursesList.innerHTML = '';
+
+    if (subjects.length === 0) {
+        coursesList.innerHTML = '<li class="text-gray-500">No courses assigned</li>';
+        return;
+    }
+
+    subjects.forEach(subject => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div class="flex justify-between items-center">
+                <span>${subject.subjectCode} - ${subject.subjectName}</span>
+                <span class="text-xs text-gray-500">Sem ${subject.semester}</span>
+            </div>
+        `;
+        coursesList.appendChild(li);
+    });
 }

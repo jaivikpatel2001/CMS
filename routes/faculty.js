@@ -6,6 +6,7 @@ const Attendance = require('../models/Attendance');
 const Assignment = require('../models/Assignment');
 const Complaint = require('../models/Complaint');
 const Announcement = require('../models/Announcement');
+const Subject = require('../models/Subject');
 const { authenticateToken, authorizeRole, validateRequest, asyncHandler } = require('../middleware/auth');
 const { uploadDocument, handleUploadError } = require('../middleware/upload');
 
@@ -489,12 +490,12 @@ router.delete('/attendance/:attendanceId', asyncHandler(async (req, res) => {
 router.post('/assignments', validateRequest({
     title: { required: true, minLength: 5, maxLength: 200 },
     description: { required: true, minLength: 10, maxLength: 1000 },
-    subjectCode: { required: true },
+    subjectId: { required: true },
     dueDate: { required: true },
     maxMarks: { required: true, type: 'number', min: 1, max: 100 },
     instructions: { maxLength: 500 }
 }), asyncHandler(async (req, res) => {
-    const { title, description, subjectCode, dueDate, maxMarks, instructions } = req.body;
+    const { title, description, subjectId, dueDate, maxMarks, instructions } = req.body;
     const faculty = await Faculty.findOne({ userId: req.user._id });
     
     if (!faculty) {
@@ -504,9 +505,17 @@ router.post('/assignments', validateRequest({
         });
     }
 
-    // Check if faculty teaches this subject
-    const subject = faculty.subjects.find(sub => sub.subjectCode === subjectCode);
+    // Find the subject and verify faculty teaches it
+    const subject = await Subject.findById(subjectId);
     if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    // Check if faculty teaches this subject
+    if (subject.facultyId.toString() !== faculty._id.toString()) {
         return res.status(403).json({
             success: false,
             message: 'You are not authorized to create assignments for this subject'
@@ -515,7 +524,7 @@ router.post('/assignments', validateRequest({
 
     // Get students enrolled in this subject
     const students = await Student.find({
-        'subjects.subjectCode': subjectCode,
+        'subjects.subjectCode': subject.subjectCode,
         'subjects.facultyId': faculty._id
     });
 
@@ -527,7 +536,8 @@ router.post('/assignments', validateRequest({
     const assignment = new Assignment({
         title,
         description,
-        subjectCode,
+        subjectId: subject._id,
+        subjectCode: subject.subjectCode,
         subjectName: subject.subjectName,
         facultyId: faculty._id,
         assignedTo,
@@ -855,6 +865,498 @@ router.put('/complaints/:complaintId', validateRequest({
         success: true,
         message: 'Complaint status updated successfully',
         complaint
+    });
+}));
+
+// ==================== SUBJECT MANAGEMENT ROUTES ====================
+
+// Create new subject
+router.post('/subjects', validateRequest({
+    subjectCode: { required: true, minLength: 3, maxLength: 10 },
+    subjectName: { required: true, minLength: 5, maxLength: 100 },
+    description: { maxLength: 500 },
+    department: { required: true },
+    semester: { required: true, type: 'number', min: 1, max: 8 },
+    year: { required: true, type: 'number', min: 1, max: 4 },
+    credits: { type: 'number', min: 1, max: 6 },
+    academicYear: { required: true },
+    maxStudents: { type: 'number', min: 1, max: 200 },
+    syllabus: { maxLength: 2000 }
+}), asyncHandler(async (req, res) => {
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const {
+        subjectCode,
+        subjectName,
+        description,
+        department,
+        semester,
+        year,
+        credits = 3,
+        academicYear,
+        maxStudents = 60,
+        syllabus,
+        objectives = [],
+        prerequisites = [],
+        evaluationCriteria = {},
+        classSchedule = []
+    } = req.body;
+
+    // Check if subject already exists for this academic year
+    const existingSubject = await Subject.findOne({
+        subjectCode: subjectCode.toUpperCase(),
+        academicYear
+    });
+
+    if (existingSubject) {
+        return res.status(400).json({
+            success: false,
+            message: 'Subject with this code already exists for the academic year'
+        });
+    }
+
+    const subject = new Subject({
+        subjectCode: subjectCode.toUpperCase(),
+        subjectName,
+        description,
+        department: department || faculty.department,
+        semester,
+        year,
+        credits,
+        facultyId: faculty._id,
+        academicYear,
+        maxStudents,
+        syllabus,
+        objectives,
+        prerequisites,
+        evaluationCriteria: {
+            midterm: evaluationCriteria.midterm || 30,
+            final: evaluationCriteria.final || 50,
+            assignments: evaluationCriteria.assignments || 10,
+            attendance: evaluationCriteria.attendance || 10
+        },
+        classSchedule
+    });
+
+    await subject.save();
+
+    // Update faculty subjects array
+    faculty.subjects.push({
+        subjectCode: subject.subjectCode,
+        subjectName: subject.subjectName,
+        semester: subject.semester,
+        year: subject.year,
+        credits: subject.credits
+    });
+    await faculty.save();
+
+    res.status(201).json({
+        success: true,
+        message: 'Subject created successfully',
+        subject
+    });
+}));
+
+// Get all subjects taught by faculty
+router.get('/subjects', asyncHandler(async (req, res) => {
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const { academicYear } = req.query;
+    const subjects = await Subject.getSubjectsByFaculty(faculty._id, academicYear);
+
+    res.json({
+        success: true,
+        subjects
+    });
+}));
+
+// Get specific subject details
+router.get('/subjects/:subjectId', asyncHandler(async (req, res) => {
+    const { subjectId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const subject = await Subject.findById(subjectId)
+        .populate('facultyId', 'userId employeeId department designation')
+        .populate('facultyId.userId', 'firstName lastName')
+        .populate('enrolledStudents.studentId', 'userId enrollmentNumber')
+        .populate('enrolledStudents.studentId.userId', 'firstName lastName');
+
+    if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    if (subject.facultyId._id.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to view this subject'
+        });
+    }
+
+    res.json({
+        success: true,
+        subject
+    });
+}));
+
+// Update subject
+router.put('/subjects/:subjectId', validateRequest({
+    subjectName: { minLength: 5, maxLength: 100 },
+    description: { maxLength: 500 },
+    credits: { type: 'number', min: 1, max: 6 },
+    maxStudents: { type: 'number', min: 1, max: 200 },
+    syllabus: { maxLength: 2000 },
+    objectives: { type: 'array' },
+    prerequisites: { type: 'array' },
+    evaluationCriteria: { type: 'object' },
+    classSchedule: { type: 'array' },
+    isActive: { type: 'boolean' }
+}), asyncHandler(async (req, res) => {
+    const { subjectId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const subject = await Subject.findById(subjectId);
+
+    if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    if (subject.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to update this subject'
+        });
+    }
+
+    // Update allowed fields
+    const allowedUpdates = [
+        'subjectName', 'description', 'credits', 'maxStudents', 
+        'syllabus', 'objectives', 'prerequisites', 'evaluationCriteria', 
+        'classSchedule', 'isActive'
+    ];
+
+    allowedUpdates.forEach(field => {
+        if (req.body[field] !== undefined) {
+            subject[field] = req.body[field];
+        }
+    });
+
+    await subject.save();
+
+    res.json({
+        success: true,
+        message: 'Subject updated successfully',
+        subject
+    });
+}));
+
+// Delete subject
+router.delete('/subjects/:subjectId', asyncHandler(async (req, res) => {
+    const { subjectId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const subject = await Subject.findById(subjectId);
+
+    if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    if (subject.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to delete this subject'
+        });
+    }
+
+    // Check if subject has enrolled students
+    if (subject.enrolledStudents.length > 0) {
+        return res.status(400).json({
+            success: false,
+            message: 'Cannot delete subject with enrolled students. Please unenroll all students first.'
+        });
+    }
+
+    // Remove subject from faculty's subjects array
+    faculty.subjects = faculty.subjects.filter(
+        sub => sub.subjectCode !== subject.subjectCode
+    );
+    await faculty.save();
+
+    await Subject.findByIdAndDelete(subjectId);
+
+    res.json({
+        success: true,
+        message: 'Subject deleted successfully'
+    });
+}));
+
+// Enroll student in subject
+router.post('/subjects/:subjectId/enroll', validateRequest({
+    studentId: { required: true },
+    enrollmentNumber: { required: true }
+}), asyncHandler(async (req, res) => {
+    const { subjectId } = req.params;
+    const { studentId, enrollmentNumber } = req.body;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const subject = await Subject.findById(subjectId);
+
+    if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    if (subject.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to manage this subject'
+        });
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+        return res.status(404).json({
+            success: false,
+            message: 'Student not found'
+        });
+    }
+
+    try {
+        await subject.enrollStudent(studentId, enrollmentNumber);
+        
+        // Update student's subjects array
+        const studentSubject = {
+            subjectCode: subject.subjectCode,
+            subjectName: subject.subjectName,
+            semester: subject.semester,
+            year: subject.year,
+            credits: subject.credits,
+            facultyId: faculty._id
+        };
+
+        // Check if student already has this subject
+        const existingSubject = student.subjects.find(
+            sub => sub.subjectCode === subject.subjectCode
+        );
+
+        if (!existingSubject) {
+            student.subjects.push(studentSubject);
+            await student.save();
+        }
+
+        res.json({
+            success: true,
+            message: 'Student enrolled successfully',
+            enrollmentCount: subject.enrollmentCount
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+}));
+
+// Unenroll student from subject
+router.delete('/subjects/:subjectId/enroll/:studentId', asyncHandler(async (req, res) => {
+    const { subjectId, studentId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const subject = await Subject.findById(subjectId);
+
+    if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    if (subject.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to manage this subject'
+        });
+    }
+
+    try {
+        await subject.unenrollStudent(studentId);
+        
+        // Update student's subjects array
+        const student = await Student.findById(studentId);
+        if (student) {
+            student.subjects = student.subjects.filter(
+                sub => sub.subjectCode !== subject.subjectCode
+            );
+            await student.save();
+        }
+
+        res.json({
+            success: true,
+            message: 'Student unenrolled successfully',
+            enrollmentCount: subject.enrollmentCount
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+}));
+
+// Get enrolled students for a subject
+router.get('/subjects/:subjectId/students', asyncHandler(async (req, res) => {
+    const { subjectId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const subject = await Subject.findById(subjectId)
+        .populate('enrolledStudents.studentId', 'userId enrollmentNumber')
+        .populate('enrolledStudents.studentId.userId', 'firstName lastName');
+
+    if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    if (subject.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to view this subject'
+        });
+    }
+
+    res.json({
+        success: true,
+        students: subject.enrolledStudents,
+        enrollmentCount: subject.enrollmentCount,
+        availableSeats: subject.availableSeats
+    });
+}));
+
+// Get subject statistics
+router.get('/subjects/:subjectId/stats', asyncHandler(async (req, res) => {
+    const { subjectId } = req.params;
+    const faculty = await Faculty.findOne({ userId: req.user._id });
+    
+    if (!faculty) {
+        return res.status(404).json({
+            success: false,
+            message: 'Faculty profile not found'
+        });
+    }
+
+    const subject = await Subject.findById(subjectId);
+
+    if (!subject) {
+        return res.status(404).json({
+            success: false,
+            message: 'Subject not found'
+        });
+    }
+
+    if (subject.facultyId.toString() !== faculty._id.toString()) {
+        return res.status(403).json({
+            success: false,
+            message: 'You are not authorized to view this subject'
+        });
+    }
+
+    // Get assignment count
+    const assignmentCount = await Assignment.countDocuments({
+        subjectCode: subject.subjectCode,
+        facultyId: faculty._id
+    });
+
+    // Get attendance records count
+    const attendanceCount = await Attendance.countDocuments({
+        subjectCode: subject.subjectCode,
+        facultyId: faculty._id
+    });
+
+    // Get grades count
+    const gradesCount = await Grade.countDocuments({
+        subjectCode: subject.subjectCode,
+        facultyId: faculty._id
+    });
+
+    res.json({
+        success: true,
+        stats: {
+            enrollmentCount: subject.enrollmentCount,
+            availableSeats: subject.availableSeats,
+            enrollmentPercentage: subject.enrollmentPercentage,
+            assignmentCount,
+            attendanceCount,
+            gradesCount,
+            maxStudents: subject.maxStudents
+        }
     });
 }));
 
