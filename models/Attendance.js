@@ -28,6 +28,11 @@ const attendanceSchema = new mongoose.Schema({
         ref: 'Faculty',
         required: true
     },
+    subjectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Subject',
+        required: true
+    },
     semester: {
         type: Number,
         required: true,
@@ -85,8 +90,10 @@ const attendanceSchema = new mongoose.Schema({
 
 // Index for efficient queries
 attendanceSchema.index({ studentId: 1, subjectCode: 1 });
+attendanceSchema.index({ studentId: 1, subjectId: 1 });
 attendanceSchema.index({ enrollmentNumber: 1 });
 attendanceSchema.index({ facultyId: 1 });
+attendanceSchema.index({ subjectId: 1 });
 attendanceSchema.index({ date: 1 });
 attendanceSchema.index({ semester: 1, year: 1 });
 
@@ -179,6 +186,139 @@ attendanceSchema.statics.getAttendanceSummary = async function(studentId, semest
     ]);
     
     return summary;
+};
+
+// Static method to get attendance by subject
+attendanceSchema.statics.getAttendanceBySubject = function(subjectId) {
+    return this.find({ subjectId })
+        .populate('studentId', 'userId enrollmentNumber')
+        .populate('studentId.userId', 'firstName lastName')
+        .populate('facultyId', 'userId employeeId department')
+        .populate('facultyId.userId', 'firstName lastName')
+        .sort({ date: -1 });
+};
+
+// Static method to get attendance by faculty and subject
+attendanceSchema.statics.getAttendanceByFacultyAndSubject = function(facultyId, subjectId) {
+    return this.find({ facultyId, subjectId })
+        .populate('studentId', 'userId enrollmentNumber')
+        .populate('studentId.userId', 'firstName lastName')
+        .populate('subjectId', 'subjectCode subjectName semester year')
+        .sort({ date: -1 });
+};
+
+// Static method to get attendance summary for a subject
+attendanceSchema.statics.getSubjectAttendanceSummary = async function(subjectId, semester, year) {
+    const summary = await this.aggregate([
+        {
+            $match: {
+                subjectId: new mongoose.Types.ObjectId(subjectId),
+                semester,
+                year
+            }
+        },
+        {
+            $group: {
+                _id: '$studentId',
+                studentName: { $first: '$studentId' },
+                totalClasses: { $sum: 1 },
+                presentClasses: {
+                    $sum: {
+                        $cond: [
+                            { $in: ['$status', ['present', 'late']] },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                absentClasses: {
+                    $sum: {
+                        $cond: [
+                            { $eq: ['$status', 'absent'] },
+                            1,
+                            0
+                        ]
+                    }
+                },
+                lateClasses: {
+                    $sum: {
+                        $cond: [
+                            { $eq: ['$status', 'late'] },
+                            1,
+                            0
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
+                attendancePercentage: {
+                    $round: [
+                        {
+                            $multiply: [
+                                { $divide: ['$presentClasses', '$totalClasses'] },
+                                100
+                            ]
+                        },
+                        2
+                    ]
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: 'students',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'student'
+            }
+        },
+        {
+            $unwind: '$student'
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'student.userId',
+                foreignField: '_id',
+                as: 'user'
+            }
+        },
+        {
+            $unwind: '$user'
+        },
+        {
+            $project: {
+                studentId: '$_id',
+                enrollmentNumber: '$student.enrollmentNumber',
+                studentName: { $concat: ['$user.firstName', ' ', '$user.lastName'] },
+                totalClasses: 1,
+                presentClasses: 1,
+                absentClasses: 1,
+                lateClasses: 1,
+                attendancePercentage: 1
+            }
+        },
+        {
+            $sort: { attendancePercentage: -1 }
+        }
+    ]);
+    
+    return summary;
+};
+
+// Static method to get daily attendance for a subject
+attendanceSchema.statics.getDailyAttendanceForSubject = async function(subjectId, date) {
+    const attendance = await this.find({
+        subjectId: new mongoose.Types.ObjectId(subjectId),
+        date: new Date(date)
+    })
+    .populate('studentId', 'userId enrollmentNumber')
+    .populate('studentId.userId', 'firstName lastName')
+    .sort({ 'studentId.enrollmentNumber': 1 });
+
+    return attendance;
 };
 
 module.exports = mongoose.model('Attendance', attendanceSchema);

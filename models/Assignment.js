@@ -29,6 +29,11 @@ const assignmentSchema = new mongoose.Schema({
         ref: 'Faculty',
         required: true
     },
+    subjectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Subject',
+        required: true
+    },
     assignedTo: [{
         studentId: {
             type: mongoose.Schema.Types.ObjectId,
@@ -142,6 +147,7 @@ const assignmentSchema = new mongoose.Schema({
 
 // Index for efficient queries
 assignmentSchema.index({ facultyId: 1 });
+assignmentSchema.index({ subjectId: 1 });
 assignmentSchema.index({ subjectCode: 1 });
 assignmentSchema.index({ dueDate: 1 });
 assignmentSchema.index({ 'assignedTo.studentId': 1 });
@@ -156,6 +162,39 @@ assignmentSchema.methods.hasStudentSubmitted = function(studentId) {
     return this.submissions.some(submission => 
         submission.studentId.toString() === studentId.toString()
     );
+};
+
+// Method to get assignment statistics
+assignmentSchema.methods.getStatistics = function() {
+    const totalAssigned = this.assignedTo.length;
+    const totalSubmitted = this.submissions.length;
+    const totalGraded = this.submissions.filter(sub => sub.status === 'graded').length;
+    const submissionRate = totalAssigned > 0 ? Math.round((totalSubmitted / totalAssigned) * 100) : 0;
+    const gradingRate = totalSubmitted > 0 ? Math.round((totalGraded / totalSubmitted) * 100) : 0;
+
+    return {
+        totalAssigned,
+        totalSubmitted,
+        totalGraded,
+        submissionRate,
+        gradingRate,
+        pendingGrading: totalSubmitted - totalGraded
+    };
+};
+
+// Static method to get assignments by subject
+assignmentSchema.statics.getAssignmentsBySubject = function(subjectId) {
+    return this.find({ subjectId })
+        .populate('facultyId', 'userId employeeId department')
+        .populate('facultyId.userId', 'firstName lastName')
+        .sort({ createdAt: -1 });
+};
+
+// Static method to get assignments by faculty and subject
+assignmentSchema.statics.getAssignmentsByFacultyAndSubject = function(facultyId, subjectId) {
+    return this.find({ facultyId, subjectId })
+        .populate('subjectId', 'subjectCode subjectName semester year')
+        .sort({ createdAt: -1 });
 };
 
 module.exports = mongoose.model('Assignment', assignmentSchema);

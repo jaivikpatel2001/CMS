@@ -63,7 +63,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"username\": \"student1\",\n  \"email\": \"1234567890123@silveroakuni.ac.in\",\n  \"password\": \"password123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"role\": \"student\",\n  \"phone\": \"9876543210\"\n}"
+							"raw": "{\n  \"username\": \"student1\",\n  \"email\": \"1234567890123@silveroakuni.ac.in\",\n  \"password\": \"password123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"role\": \"student\",\n  \"phone\": \"9876543210\",\n  \"studentId\": \"C123456\",\n  \"course\": \"Diploma in IT\",\n  \"department\": \"Information Technology\",\n  \"semester\": 1\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/auth/register",
@@ -259,7 +259,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"username\": \"faculty1\",\n  \"email\": \"12345@silveroakuni.ac.in\",\n  \"password\": \"password123\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"role\": \"faculty\",\n  \"phone\": \"9876543210\",\n  \"employeeId\": \"F12345\",\n  \"department\": \"Information Technology\",\n  \"designation\": \"Assistant Professor\"\n}"
+							"raw": "{\n  \"username\": \"faculty1\",\n  \"email\": \"12345@silveroakuni.ac.in\",\n  \"password\": \"password123\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"role\": \"faculty\",\n  \"phone\": \"9876543210\",\n  \"employeeId\": \"F12345\",\n  \"department\": \"Information Technology\",\n  \"designation\": \"Assistant Professor\",\n  \"semester\": 1,\n  \"course\": \"Diploma in IT\",\n  \"studentId\": \"C123456\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/admin/users",
@@ -280,7 +280,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"firstName\": \"Updated Name\",\n  \"lastName\": \"Updated Last\",\n  \"email\": \"updated@silveroakuni.ac.in\",\n  \"phone\": \"9876543210\",\n  \"isActive\": true\n}"
+							"raw": "{\n  \"firstName\": \"Updated Name\",\n  \"lastName\": \"Updated Last\",\n  \"email\": \"updated@silveroakuni.ac.in\",\n  \"phone\": \"9876543210\",\n  \"isActive\": true,\n  \"role\": \"student\",\n  \"studentId\": \"C789012\",\n  \"course\": \"Diploma in Computer Science\",\n  \"department\": \"Computer Science\",\n  \"semester\": 2,\n  \"employeeId\": \"F789012\",\n  \"designation\": \"Professor\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/admin/users/:userId",
@@ -725,7 +725,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"studentId\": \"STUDENT_ID_HERE\",\n  \"subjectCode\": \"AJP\",\n  \"date\": \"2025-01-15\",\n  \"status\": \"present\",\n  \"classTime\": {\n    \"start\": \"10:00 AM\",\n    \"end\": \"11:00 AM\"\n  },\n  \"room\": \"D-204\",\n  \"remarks\": \"On time\"\n}"
+							"raw": "{\n  \"studentId\": \"STUDENT_ID_HERE\",\n  \"subjectId\": \"SUBJECT_ID_HERE\",\n  \"date\": \"2025-01-15\",\n  \"status\": \"present\",\n  \"classTime\": {\n    \"start\": \"10:00 AM\",\n    \"end\": \"11:00 AM\"\n  },\n  \"room\": \"D-204\",\n  \"remarks\": \"On time\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/faculty/attendance",
@@ -807,7 +807,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"Java Programming Assignment\",\n  \"description\": \"Create a Java application with GUI\",\n  \"subjectCode\": \"AJP\",\n  \"dueDate\": \"2025-02-15\",\n  \"maxMarks\": 50,\n  \"instructions\": \"Submit the source code and executable\"\n}"
+							"raw": "{\n  \"title\": \"Java Programming Assignment\",\n  \"description\": \"Create a Java application with GUI\",\n  \"subjectId\": \"SUBJECT_ID_HERE\",\n  \"dueDate\": \"2025-02-15\",\n  \"maxMarks\": 50,\n  \"instructions\": \"Submit the source code and executable\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/faculty/assignments",
@@ -978,6 +978,187 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "Create Subject",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subjectCode\": \"AJP\",\n  \"subjectName\": \"Advanced Java Programming\",\n  \"description\": \"Advanced concepts in Java programming\",\n  \"department\": \"Information Technology\",\n  \"semester\": 3,\n  \"year\": 2,\n  \"credits\": 4,\n  \"academicYear\": \"2024-25\",\n  \"maxStudents\": 60,\n  \"syllabus\": \"Complete syllabus for Advanced Java Programming\",\n  \"objectives\": [\"Learn advanced Java concepts\", \"Understand design patterns\"],\n  \"prerequisites\": [\n    {\n      \"subjectCode\": \"BJP\",\n      \"subjectName\": \"Basic Java Programming\"\n    }\n  ],\n  \"evaluationCriteria\": {\n    \"midterm\": 30,\n    \"final\": 50,\n    \"assignments\": 10,\n    \"attendance\": 10\n  },\n  \"classSchedule\": [\n    {\n      \"day\": \"Monday\",\n      \"startTime\": \"10:00 AM\",\n      \"endTime\": \"11:00 AM\",\n      \"room\": \"D-204\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects"]
+						}
+					}
+				},
+				{
+					"name": "Get Faculty Subjects",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects?academicYear=2024-25",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects"],
+							"query": [
+								{
+									"key": "academicYear",
+									"value": "2024-25"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Subject Details",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects/:subjectId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects", ":subjectId"],
+							"variable": [
+								{
+									"key": "subjectId",
+									"value": "SUBJECT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Subject",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subjectName\": \"Updated Subject Name\",\n  \"description\": \"Updated description\",\n  \"credits\": 5,\n  \"maxStudents\": 70,\n  \"syllabus\": \"Updated syllabus\",\n  \"objectives\": [\"Updated objective 1\", \"Updated objective 2\"],\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects/:subjectId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects", ":subjectId"],
+							"variable": [
+								{
+									"key": "subjectId",
+									"value": "SUBJECT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Subject",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects/:subjectId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects", ":subjectId"],
+							"variable": [
+								{
+									"key": "subjectId",
+									"value": "SUBJECT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Enroll Student in Subject",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentId\": \"STUDENT_ID_HERE\",\n  \"enrollmentNumber\": \"C123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects/:subjectId/enroll",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects", ":subjectId", "enroll"],
+							"variable": [
+								{
+									"key": "subjectId",
+									"value": "SUBJECT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Unenroll Student from Subject",
+					"request": {
+						"method": "DELETE",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects/:subjectId/enroll/:studentId",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects", ":subjectId", "enroll", ":studentId"],
+							"variable": [
+								{
+									"key": "subjectId",
+									"value": "SUBJECT_ID_HERE"
+								},
+								{
+									"key": "studentId",
+									"value": "STUDENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Enrolled Students for Subject",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects/:subjectId/students",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects", ":subjectId", "students"],
+							"variable": [
+								{
+									"key": "subjectId",
+									"value": "SUBJECT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Subject Statistics",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/faculty/subjects/:subjectId/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["faculty", "subjects", ":subjectId", "stats"],
+							"variable": [
+								{
+									"key": "subjectId",
+									"value": "SUBJECT_ID_HERE"
+								}
+							]
+						}
+					}
 				}
 			]
 		},
@@ -992,6 +1173,17 @@
 							"raw": "{{baseUrl}}/student/profile",
 							"host": ["{{baseUrl}}"],
 							"path": ["student", "profile"]
+						}
+					}
+				},
+				{
+					"name": "Student Debug Info",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/debug",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "debug"]
 						}
 					}
 				},
@@ -1110,6 +1302,45 @@
 							"raw": "{{baseUrl}}/student/announcements",
 							"host": ["{{baseUrl}}"],
 							"path": ["student", "announcements"]
+						}
+					}
+				},
+				{
+					"name": "Mark Announcement as Viewed",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{baseUrl}}/student/announcements/:id/view",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "announcements", ":id", "view"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ANNOUNCEMENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Student Timetable",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/timetable",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "timetable"]
+						}
+					}
+				},
+				{
+					"name": "Get Student Exam Schedule",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/exams",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "exams"]
 						}
 					}
 				},
