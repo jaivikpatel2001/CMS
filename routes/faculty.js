@@ -524,8 +524,7 @@ router.post('/assignments', validateRequest({
 
     // Get students enrolled in this subject
     const students = await Student.find({
-        'subjects.subjectCode': subject.subjectCode,
-        'subjects.facultyId': faculty._id
+        _id: { $in: subject.enrolledStudents.map(enrollment => enrollment.studentId) }
     });
 
     const assignedTo = students.map(student => ({
