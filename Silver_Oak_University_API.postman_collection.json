@@ -1177,6 +1177,17 @@
 					}
 				},
 				{
+					"name": "Student Debug Info",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/debug",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "debug"]
+						}
+					}
+				},
+				{
 					"name": "Get Student Grades",
 					"request": {
 						"method": "GET",
@@ -1291,6 +1302,45 @@
 							"raw": "{{baseUrl}}/student/announcements",
 							"host": ["{{baseUrl}}"],
 							"path": ["student", "announcements"]
+						}
+					}
+				},
+				{
+					"name": "Mark Announcement as Viewed",
+					"request": {
+						"method": "POST",
+						"url": {
+							"raw": "{{baseUrl}}/student/announcements/:id/view",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "announcements", ":id", "view"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "ANNOUNCEMENT_ID_HERE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Student Timetable",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/timetable",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "timetable"]
+						}
+					}
+				},
+				{
+					"name": "Get Student Exam Schedule",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/student/exams",
+							"host": ["{{baseUrl}}"],
+							"path": ["student", "exams"]
 						}
 					}
 				},
