@@ -6,8 +6,11 @@ body {
 
 /* Specific styles not easily covered by Tailwind, or for complex gradients */
 
+li{
+    list-style: none;
+}
 .rounded-lg,.shadow-md{
-    overflow-x: scroll;
+    overflow-x: auto;
 }
 /* Attendance progress circle - keeping custom CSS for the conic gradient */
 .attendance .progress-circle {
@@ -236,7 +239,7 @@ body {
     width: 100%;
     margin: auto;
     min-height: calc(100vh - 4rem);
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 /* Specific modal content adjustments */

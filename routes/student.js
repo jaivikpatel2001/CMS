@@ -14,6 +14,68 @@ const router = express.Router();
 router.use(authenticateToken);
 router.use(authorizeRole('student'));
 
+// Debug endpoint to check student and assignment data
+router.get('/debug', asyncHandler(async (req, res) => {
+    const student = await Student.findOne({ userId: req.user._id });
+    
+    if (!student) {
+        return res.status(404).json({
+            success: false,
+            message: 'Student profile not found'
+        });
+    }
+
+    // Get all assignments
+    const allAssignments = await Assignment.find({ status: 'active' })
+        .populate('facultyId', 'userId')
+        .populate('facultyId.userId', 'firstName lastName');
+
+    // Get assignments assigned to this student
+    const studentAssignments = await Assignment.find({
+        'assignedTo.studentId': student._id,
+        status: 'active'
+    }).populate('facultyId', 'userId')
+    .populate('facultyId.userId', 'firstName lastName');
+
+    // Get subjects this student is enrolled in
+    const enrolledSubjects = await Subject.find({
+        'enrolledStudents.studentId': student._id
+    });
+
+    res.json({
+        success: true,
+        debug: {
+            student: {
+                _id: student._id,
+                enrollmentNumber: student.enrollmentNumber,
+                subjects: student.subjects,
+                department: student.department,
+                year: student.year,
+                semester: student.semester
+            },
+            allAssignments: allAssignments.map(a => ({
+                _id: a._id,
+                title: a.title,
+                subjectCode: a.subjectCode,
+                assignedTo: a.assignedTo,
+                facultyId: a.facultyId
+            })),
+            studentAssignments: studentAssignments.map(a => ({
+                _id: a._id,
+                title: a.title,
+                subjectCode: a.subjectCode,
+                assignedTo: a.assignedTo
+            })),
+            enrolledSubjects: enrolledSubjects.map(s => ({
+                _id: s._id,
+                subjectCode: s.subjectCode,
+                subjectName: s.subjectName,
+                enrolledStudents: s.enrolledStudents
+            }))
+        }
+    });
+}));
+
 // Get student profile
 router.get('/profile', asyncHandler(async (req, res) => {
     const student = await Student.findOne({ userId: req.user._id })
